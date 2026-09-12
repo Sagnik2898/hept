@@ -55,6 +55,7 @@ app.get('/api', (req, res) => {
       },
       biomarkers: {
         earlyDetection: 'GET /api/biomarkers/early-detection?minDatasets=2',
+        tiers: 'GET /api/biomarkers/tiers',
         scoreProfile: 'POST /api/biomarkers/score (body: { expressionProfile: { SPINK1: 4.5, GPC3: 3.2, PCK1: -2.1 } })'
       }
     }

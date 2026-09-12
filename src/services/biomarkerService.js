@@ -77,7 +77,64 @@ const CANONICAL_EARLY_BIOMARKERS = [
   }
 ];
 
+export const SIGNAL_TIERS = [
+  {
+    range: '0–20',
+    min: 0,
+    max: 20,
+    tier: 'LOWER SIGNAL',
+    description: 'Molecular profile closer to reference state',
+    recommendations: 'Baseline hepatic molecular profile. Routine metabolic health and liver enzyme monitoring suggested.'
+  },
+  {
+    range: '21–40',
+    min: 21,
+    max: 40,
+    tier: 'EARLY SIGNAL',
+    description: 'Early progression-associated changes',
+    recommendations: 'Early transcriptomic divergence detected (steatotic/early MASH stress). Lifestyle/metabolic intervention and 6-month hepatic checkup advised.'
+  },
+  {
+    range: '41–60',
+    min: 41,
+    max: 60,
+    tier: 'INTERMEDIATE',
+    description: 'Moderate progression-associated pattern',
+    recommendations: 'Moderate progression signature consistent with active steatohepatitis and early fibrotic remodeling. Regular clinical surveillance recommended.'
+  },
+  {
+    range: '61–80',
+    min: 61,
+    max: 80,
+    tier: 'ELEVATED',
+    description: 'Stronger progression-associated pattern',
+    recommendations: 'Elevated oncogenic transition signature indicating advanced dysplastic or cirrhotic microenvironment. High-resolution multiphasic imaging advised.'
+  },
+  {
+    range: '81–100',
+    min: 81,
+    max: 100,
+    tier: 'HIGH SIGNAL',
+    description: 'Strong molecular similarity to the learned progression-associated signature',
+    recommendations: 'Strong molecular concordance with early Hepatocellular Carcinoma transcriptomic signature. Immediate multiphasic CT/MRI and clinical biopsy confirmation recommended.'
+  }
+];
+
+export function getSignalTier(score) {
+  if (score >= 81) return SIGNAL_TIERS[4];
+  if (score >= 61) return SIGNAL_TIERS[3];
+  if (score >= 41) return SIGNAL_TIERS[2];
+  if (score >= 21) return SIGNAL_TIERS[1];
+  return SIGNAL_TIERS[0];
+}
+
 class BiomarkerService {
+  /**
+   * Returns signal tier definitions
+   */
+  getSignalTiers() {
+    return SIGNAL_TIERS;
+  }
   /**
    * Identifies candidate progression biomarkers across all 7 datasets
    */
@@ -183,24 +240,15 @@ class BiomarkerService {
 
     const normalizedPercentage = Math.min(100, Math.round((scoreAccumulator / maxPossibleScore) * 100));
 
-    let riskCategory = 'LOW_RISK';
-    let recommendations = 'Normal or low-risk expression pattern. Routine hepatic monitoring suggested.';
-
-    if (normalizedPercentage >= 75) {
-      riskCategory = 'HIGH_RISK_EARLY_MALIGNANCY';
-      recommendations = 'Strong concordance with early Hepatocellular Carcinoma transcriptomic signature. Immediate high-resolution multiphasic CT/MRI and clinical biopsy histological confirmation recommended.';
-    } else if (normalizedPercentage >= 50) {
-      riskCategory = 'MODERATE_RISK_PRE_MALIGNANT';
-      recommendations = 'Expression signature indicates advanced dysplastic or cirrhotic microenvironment with high malignant transition potential. Close 3-month surveillance advised.';
-    } else if (normalizedPercentage >= 25) {
-      riskCategory = 'EARLY_STEATOSIS_MASH_RISK';
-      recommendations = 'Biomarker levels reflect active steatohepatitis and metabolic remodeling. Lifestyle and metabolic interventions recommended.';
-    }
+    const tierInfo = getSignalTier(normalizedPercentage);
 
     return {
       riskScorePercentage: normalizedPercentage,
-      riskCategory,
-      recommendations,
+      riskCategory: tierInfo.tier,
+      signalTier: tierInfo.tier,
+      tierRange: tierInfo.range,
+      tierDescription: tierInfo.description,
+      recommendations: tierInfo.recommendations,
       evaluatedMarkersCount: evaluatedGenes.length,
       evaluatedGenes
     };

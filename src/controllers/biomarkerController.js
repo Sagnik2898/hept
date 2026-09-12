@@ -4,7 +4,17 @@ export const getEarlyBiomarkers = (req, res) => {
   try {
     const minDatasetCount = req.query.minDatasets ? parseInt(req.query.minDatasets, 10) : 2;
     const signatures = biomarkerService.getEarlyBiomarkerSignatures({ minDatasetCount });
-    res.json({ success: true, ...signatures });
+    const signalTiers = biomarkerService.getSignalTiers();
+    res.json({ success: true, signalTiers, ...signatures });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const getSignalTiers = (req, res) => {
+  try {
+    const tiers = biomarkerService.getSignalTiers();
+    res.json({ success: true, count: tiers.length, tiers });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

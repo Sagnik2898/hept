@@ -60,9 +60,10 @@ async function runTests() {
       GNMT: -1.9
     };
     const riskResult = biomarkerService.calculateEarlyCancerRisk(patientMalignantProfile);
-    assert.ok(riskResult.riskScorePercentage >= 75, `High risk score expected (got ${riskResult.riskScorePercentage}%)`);
-    assert.strictEqual(riskResult.riskCategory, 'HIGH_RISK_EARLY_MALIGNANCY', 'Category should be HIGH_RISK_EARLY_MALIGNANCY');
-    console.log(`✓ Biomarker Risk Scorer Passed: Computed Risk Score ${riskResult.riskScorePercentage}%, Category: ${riskResult.riskCategory}.`);
+    assert.ok(riskResult.riskScorePercentage >= 81, `High signal score expected >= 81% (got ${riskResult.riskScorePercentage}%)`);
+    assert.strictEqual(riskResult.signalTier, 'HIGH SIGNAL', 'Signal tier should be HIGH SIGNAL');
+    assert.strictEqual(riskResult.tierDescription, 'Strong molecular similarity to the learned progression-associated signature');
+    console.log(`✓ Biomarker Risk Scorer Passed: Computed Score ${riskResult.riskScorePercentage}%, Tier: ${riskResult.signalTier} (${riskResult.tierRange}).`);
 
     // 5. Test Live HTTP REST Endpoints
     console.log('\n[TEST 5] Testing HTTP REST API Endpoints...');
@@ -86,6 +87,13 @@ async function runTests() {
     assert.strictEqual(pathwaysRes.success, true);
     assert.ok(pathwaysRes.count >= 10, 'Should return at least 10 liver metabolic pathways');
 
+    // /api/biomarkers/tiers
+    const tiersRes = await fetch(`${BASE_URL}/api/biomarkers/tiers`).then(r => r.json());
+    assert.strictEqual(tiersRes.success, true);
+    assert.strictEqual(tiersRes.count, 5, 'Should return exactly 5 progression tiers');
+    assert.strictEqual(tiersRes.tiers[0].tier, 'LOWER SIGNAL');
+    assert.strictEqual(tiersRes.tiers[4].tier, 'HIGH SIGNAL');
+
     // /api/biomarkers/early-detection
     const biomarkersRes = await fetch(`${BASE_URL}/api/biomarkers/early-detection`).then(r => r.json());
     assert.strictEqual(biomarkersRes.success, true);
@@ -98,7 +106,8 @@ async function runTests() {
       body: JSON.stringify({ expressionProfile: patientMalignantProfile })
     }).then(r => r.json());
     assert.strictEqual(scoreHttpRes.success, true);
-    assert.strictEqual(scoreHttpRes.evaluation.riskCategory, 'HIGH_RISK_EARLY_MALIGNANCY');
+    assert.strictEqual(scoreHttpRes.evaluation.signalTier, 'HIGH SIGNAL');
+    assert.strictEqual(scoreHttpRes.evaluation.tierRange, '81–100');
 
     console.log('✓ All REST Endpoints verified successfully!');
 

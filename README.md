@@ -143,8 +143,18 @@ npm test
 - **`GET /api/pathways/stage/:stage`**: Automated metabolic pathway perturbation profile for a specific disease stage (`HCC_MALIGNANCY`, `MASH_VS_CONTROL`, `STEATOSIS_VS_CONTROL`, `FIBROSIS_PROGRESSION`).
 
 ### 6. Early Biomarker Signatures & Risk Scoring
-- **`GET /api/biomarkers/early-detection`**: Canonical early detection panel and novel data-driven progression candidates.
-- **`POST /api/biomarkers/score`**: Evaluates a biopsy gene expression profile and outputs the early malignancy risk score.
+- **`GET /api/biomarkers/early-detection`**: Canonical early detection panel, novel progression candidates, and signal tiers.
+- **`GET /api/biomarkers/tiers`**: Reference classification table for the 5 progression signal tiers:
+
+| Score Range | Signal Tier | Description |
+|---|---|---|
+| **0–20** | `LOWER SIGNAL` | Molecular profile closer to reference state |
+| **21–40** | `EARLY SIGNAL` | Early progression-associated changes |
+| **41–60** | `INTERMEDIATE` | Moderate progression-associated pattern |
+| **61–80** | `ELEVATED` | Stronger progression-associated pattern |
+| **81–100** | `HIGH SIGNAL` | Strong molecular similarity to the learned progression-associated signature |
+
+- **`POST /api/biomarkers/score`**: Evaluates a biopsy gene expression profile and outputs the score and signal tier.
   - **Body**:
     ```json
     {
@@ -164,8 +174,11 @@ npm test
       "success": true,
       "evaluation": {
         "riskScorePercentage": 86,
-        "riskCategory": "HIGH_RISK_EARLY_MALIGNANCY",
-        "recommendations": "Strong concordance with early Hepatocellular Carcinoma transcriptomic signature. Immediate high-resolution multiphasic CT/MRI and clinical biopsy histological confirmation recommended.",
+        "riskCategory": "HIGH SIGNAL",
+        "signalTier": "HIGH SIGNAL",
+        "tierRange": "81–100",
+        "tierDescription": "Strong molecular similarity to the learned progression-associated signature",
+        "recommendations": "Strong molecular concordance with early Hepatocellular Carcinoma transcriptomic signature. Immediate multiphasic CT/MRI and clinical biopsy confirmation recommended.",
         "evaluatedMarkersCount": 6,
         "evaluatedGenes": [...]
       }
