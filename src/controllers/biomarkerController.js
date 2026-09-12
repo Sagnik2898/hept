@@ -36,3 +36,18 @@ export const scorePatientProfile = (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+export const getActionableTargets = (req, res) => {
+  try {
+    const { expressionProfile = {}, trajectoryPosition = 1.0, isMalignant = false, riskScore = 0 } = req.body || {};
+    const plan = biomarkerService.evaluateTherapeuticTargets({
+      expressionProfile,
+      trajectoryPosition,
+      isMalignant,
+      riskScore
+    });
+    res.json({ success: true, ...plan });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};

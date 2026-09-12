@@ -258,8 +258,57 @@ class ReportService {
              .text('• Re-evaluate molecular biopsy only if clinical symptoms or elastography scores progress.', 48, planBoxY + 98);
         }
 
-        // 7. Footer & Regulatory Notice
-        const footerY = 762;
+        // 7. Actionable Molecular Targets & Precision Interception
+        const targetBoxY = planBoxY + 116;
+        doc.rect(36, targetBoxY, 523, 84).fill('#f1f5f9').stroke('#cbd5e1');
+
+        doc.fillColor(cPrimary).fontSize(8.5).font('Helvetica-Bold')
+           .text('ACTIONABLE TARGETS & PRECISION INTERCEPTION PROTOCOL:', 48, targetBoxY + 8);
+
+        if (isMalignant) {
+          doc.fillColor(cText).fontSize(7.5).font('Helvetica-Bold')
+             .text('• Curative Window (Milan Criteria): ', 48, targetBoxY + 22, { continued: true })
+             .font('Helvetica')
+             .text('Single nodule ≤ 5 cm or ≤ 3 nodules ≤ 3 cm candidate for surgical resection or microwave ablation (MWA).');
+
+          doc.fillColor(cText).fontSize(7.5).font('Helvetica-Bold')
+             .text('• GPC3 Immunotherapy: ', 48, targetBoxY + 36, { continued: true })
+             .font('Helvetica')
+             .text('High surface Glypican-3 expression flags eligibility for Codrituzumab / GPC3-directed CAR-T trials.');
+
+          doc.fillColor(cText).fontSize(7.5).font('Helvetica-Bold')
+             .text('• Metabolic Vulnerability: ', 48, targetBoxY + 50, { continued: true })
+             .font('Helvetica')
+             .text('PCK1 shut-down creates glycolytic dependency; consider metabolic modulation (AMPK / glycolytic flux inhibitors).');
+
+          doc.fillColor(cText).fontSize(7.5).font('Helvetica-Bold')
+             .text('• Systemic Backup: ', 48, targetBoxY + 64, { continued: true })
+             .font('Helvetica')
+             .text('Atezolizumab + Bevacizumab (IMbrave150) standard-of-care if lesion exceeds localized curative criteria.');
+        } else {
+          doc.fillColor(cText).fontSize(7.5).font('Helvetica-Bold')
+             .text('• Interception Modality: ', 48, targetBoxY + 22, { continued: true })
+             .font('Helvetica')
+             .text('Molecular transcriptome consistent with non-malignant tissue. Active surgical or cytotoxic intervention contraindicated.');
+
+          doc.fillColor(cText).fontSize(7.5).font('Helvetica-Bold')
+             .text('• Pre-Malignant Surveillance: ', 48, targetBoxY + 36, { continued: true })
+             .font('Helvetica')
+             .text('Monitor SERPINB3 kinetics during cirrhotic nodular phase to intercept potential dysplastic clonal expansion early.');
+
+          doc.fillColor(cText).fontSize(7.5).font('Helvetica-Bold')
+             .text('• Epigenetic & Metabolic Care: ', 48, targetBoxY + 50, { continued: true })
+             .font('Helvetica')
+             .text('Preserve GNMT transmethylation and PCK1 gluconeogenic activity via metabolic optimization and steatosis management.');
+
+          doc.fillColor(cText).fontSize(7.5).font('Helvetica-Bold')
+             .text('• Surveillance Interval: ', 48, targetBoxY + 64, { continued: true })
+             .font('Helvetica')
+             .text('Routine non-invasive ultrasound and hepatic panel every 6–12 months with elastography follow-up.');
+        }
+
+        // 8. Footer & Regulatory Notice
+        const footerY = 760;
         doc.rect(36, footerY, 523, 0.5).fill('#cbd5e1');
 
         doc.fillColor(cMuted).fontSize(7).font('Helvetica')

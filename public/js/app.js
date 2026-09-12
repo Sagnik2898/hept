@@ -371,6 +371,9 @@ async function runMLPrediction() {
 
     // Trigger Gemini clinical reasoning synthesis
     fetchGeminiInterpretation(expressionProfile, mlRes, progRes);
+
+    // Fetch and render Therapeutic Interception & Actionable Targets
+    fetchAndRenderTherapeuticTargets(expressionProfile, mlRes, progRes);
   } catch (err) {
     console.error('Error running ML prediction:', err);
   } finally {
@@ -1839,3 +1842,108 @@ function initGeminiCopilot() {
   });
 }
 
+/* ==========================================================================
+   Therapeutic Interception & Actionable Targets Renderer
+   ========================================================================== */
+async function fetchAndRenderTherapeuticTargets(expressionProfile, mlRes, progRes) {
+  try {
+    const trajectoryPosition = progRes?.trajectoryPosition || (mlRes?.biologicalProgression?.trajectoryPosition) || 1.0;
+    const isMalignant = mlRes?.prediction === 'EARLY_HCC';
+    const riskScore = mlRes?.riskScorePercentage !== undefined ? mlRes.riskScorePercentage : 0;
+
+    const res = await fetch('/api/biomarkers/actionable-targets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expressionProfile,
+        trajectoryPosition,
+        isMalignant,
+        riskScore
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      renderTherapeuticTargets(data);
+    }
+  } catch (err) {
+    console.error('Error fetching actionable targets:', err);
+  }
+}
+
+function renderTherapeuticTargets(data) {
+  const { curativeWindow, actionableTargets } = data;
+
+  // 1. Curative Window Status Pill & Box
+  const pill = document.getElementById('curativeStatusPill');
+  const box = document.getElementById('curativeWindowBox');
+  const dot = document.getElementById('curativeDot');
+  const headline = document.getElementById('curativeHeadline');
+  const desc = document.getElementById('curativeDesc');
+  const modality = document.getElementById('curativeModality');
+  const surveillance = document.getElementById('curativeSurveillance');
+
+  if (curativeWindow) {
+    if (pill) {
+      pill.textContent = curativeWindow.badge || 'Interception Protocol';
+      pill.className = `curative-status-pill ${
+        curativeWindow.status === 'CURATIVE_INTENT_INTERVENTION' ? 'malignant' :
+        curativeWindow.status === 'PRE_MALIGNANT_INTERCEPTION' ? 'interception' : 'benign'
+      }`;
+    }
+    if (box) {
+      box.style.borderLeftColor = curativeWindow.color || '#38bdf8';
+    }
+    if (dot) {
+      dot.style.background = curativeWindow.color || '#38bdf8';
+      dot.style.boxShadow = `0 0 8px ${curativeWindow.color || '#38bdf8'}`;
+    }
+    if (headline) headline.textContent = curativeWindow.headline || '';
+    if (desc) desc.textContent = curativeWindow.eligibility || '';
+    if (modality) modality.textContent = curativeWindow.primaryModality || '';
+    if (surveillance) surveillance.textContent = curativeWindow.surveillanceInterval || '';
+  }
+
+  // 2. Actionable Targets List
+  const list = document.getElementById('targetsList');
+  if (!list) return;
+
+  if (!actionableTargets || actionableTargets.length === 0) {
+    list.innerHTML = `
+      <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.75rem;">
+        No high-risk oncogenic targets activated. Molecular profile aligns with homeostatic liver tissue.
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = actionableTargets.map(t => {
+    const isUp = String(t.observedExpression).startsWith('+') || !String(t.observedExpression).startsWith('-');
+    const tierClass = 
+      t.evidenceTier === 'CLINICAL_TRIAL' ? 'clinical-trial' :
+      t.evidenceTier === 'INTERCEPTION_TARGET' ? 'interception' :
+      t.evidenceTier === 'METABOLIC_MODULATOR' ? 'metabolic' :
+      t.evidenceTier === 'FDA_APPROVED' ? 'fda-approved' : 'interception';
+
+    return `
+      <div class="target-card">
+        <div class="target-top-bar">
+          <div class="target-bio-group">
+            <span class="target-bio-badge">${t.biomarker}</span>
+            <span class="target-expr-tag ${isUp ? 'up' : 'down'}">${t.observedExpression}</span>
+            <span class="target-class-name">${t.targetClass}</span>
+          </div>
+          <span class="target-evidence-pill ${tierClass}">${t.evidenceLevel}</span>
+        </div>
+        <div class="target-mechanism-text">${t.mechanism}</div>
+        <div class="target-agents-wrap">
+          <span style="font-size: 0.625rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Candidate Interventions:</span>
+          ${t.candidateAgents.map(a => `<span class="agent-chip">${a}</span>`).join('')}
+        </div>
+        <div class="target-action-note">
+          ⚡ <strong>Clinical Action:</strong> ${t.clinicalAction}
+        </div>
+      </div>
+    `;
+  }).join('');
+}

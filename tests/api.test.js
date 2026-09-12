@@ -116,6 +116,22 @@ async function runTests() {
     assert.strictEqual(scoreHttpRes.evaluation.signalTier, 'HIGH SIGNAL');
     assert.strictEqual(scoreHttpRes.evaluation.tierRange, '81–100');
 
+    // POST /api/biomarkers/actionable-targets
+    const targetHttpRes = await fetch(`${BASE_URL}/api/biomarkers/actionable-targets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expressionProfile: patientMalignantProfile,
+        trajectoryPosition: 4.8,
+        isMalignant: true,
+        riskScore: 92.5
+      })
+    }).then(r => r.json());
+    assert.strictEqual(targetHttpRes.success, true);
+    assert.strictEqual(targetHttpRes.curativeWindow.status, 'CURATIVE_INTENT_INTERVENTION');
+    assert.ok(targetHttpRes.actionableTargets.length >= 3, 'Should identify actionable targets');
+    console.log(`✓ Actionable Targets Verified: Identified ${targetHttpRes.totalActionableTargets} precision targets, Curative Window: ${targetHttpRes.curativeWindow.headline}`);
+
     // 6. Verify Machine Learning Classifier Service & REST Endpoints
     console.log('\n[TEST 6] Verifying Machine Learning Classifier Engine & REST Endpoints...');
     const modelInfo = await fetch(`${BASE_URL}/api/ml/model-info`).then(r => r.json());

@@ -345,6 +345,54 @@
               </div>
             </div>
 
+            <!-- Therapeutic Interception & Actionable Targets Panel -->
+            <div class="therapeutic-panel" id="therapeuticPanel">
+              <div class="therapeutic-header">
+                <div class="therapeutic-title-group">
+                  <div class="therapeutic-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="therapeutic-title">Therapeutic Interception & Actionable Targets</span>
+                    <span class="therapeutic-subtitle">Precision Oncology & Curative Intent Window Assessment</span>
+                  </div>
+                </div>
+                <span class="curative-status-pill" id="curativeStatusPill">Milan Criteria Eligible</span>
+              </div>
+
+              <!-- Curative / Interception Window Box -->
+              <div class="curative-window-box" id="curativeWindowBox">
+                <div class="curative-lead">
+                  <span class="curative-dot" id="curativeDot"></span>
+                  <span class="curative-headline" id="curativeHeadline">Evaluating Curative Intent Window...</span>
+                </div>
+                <p class="curative-desc" id="curativeDesc">Checking Milan criteria eligibility and early intervention feasibility...</p>
+                <div class="curative-meta-row">
+                  <div class="curative-meta-item">
+                    <span class="curative-meta-lbl">Primary Modality:</span>
+                    <span class="curative-meta-val" id="curativeModality">Surgical Resection / MWA</span>
+                  </div>
+                  <div class="curative-meta-item">
+                    <span class="curative-meta-lbl">Surveillance Protocol:</span>
+                    <span class="curative-meta-val" id="curativeSurveillance">Multiphasic MRI within 14 days</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actionable Targets Grid -->
+              <div class="targets-container">
+                <div class="targets-header">
+                  <span>BIOMARKER & MECHANISM</span>
+                  <span>ACTIONABLE AGENTS & TRIAL STATUS</span>
+                </div>
+                <div class="targets-list" id="targetsList">
+                  <!-- Dynamically populated via JS -->
+                </div>
+              </div>
+            </div>
+
             <!-- Download Clinical Biopsy PDF Report Button -->
             <button type="button" class="btn-download-pdf" id="btnDownloadReportPdf">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
