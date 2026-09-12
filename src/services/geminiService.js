@@ -4,8 +4,8 @@ import { logger } from '../utils/logger.js';
 
 class GeminiService {
   constructor() {
-    this.primaryModel = 'gemini-1.5-flash';
-    this.fallbackModels = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-flash-latest'];
+    this.primaryModel = 'gemini-3.6-flash';
+    this.fallbackModels = ['gemini-3.7-flash', 'gemini-3.8-flash', 'gemini-flash-latest'];
   }
 
   getApiKey() {
