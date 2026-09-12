@@ -1,4 +1,10 @@
 import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class ReportService {
   /**
@@ -24,7 +30,7 @@ class ReportService {
         doc.on('end', () => resolve(Buffer.concat(buffers)));
         doc.on('error', err => reject(err));
 
-        const patientId = reportData.patientId || `HEP-${Date.now().toString().slice(-6)}`;
+        const patientId = reportData.patientId || `HEP-${Math.floor(100000 + Math.random() * 900000)}`;
         const assessmentDate = reportData.timestamp || new Date().toLocaleString('en-US', {
           dateStyle: 'medium',
           timeStyle: 'short'
@@ -50,6 +56,13 @@ class ReportService {
 
         // 1. Header Banner
         doc.rect(36, 36, 523, 62).fill(cPrimary);
+
+        const logoPath = path.join(__dirname, '../../public/images/logo.jpg');
+        if (fs.existsSync(logoPath)) {
+          try {
+            doc.image(logoPath, 465, 41, { width: 85, height: 50 });
+          } catch (_) {}
+        }
         
         doc.fillColor('#ffffff').fontSize(18).font('Helvetica-Bold')
            .text('HEPATOGUARD', 48, 48, { continued: true })
