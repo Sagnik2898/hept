@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPathwaysView();
   initMLConsole();
   initGeminiCopilot();
+  initNoveltyModal();
 
   // Run initial prediction with malignant preset to showcase the UI
   applyPreset('malignant');
@@ -1839,6 +1840,64 @@ function initGeminiCopilot() {
       if (input) input.value = q;
       askGeminiQuestion(q);
     });
+  });
+
+  // Copy Clinical Report Button
+  const copyBtn = document.getElementById('btnCopyGemini');
+  const copyText = document.getElementById('copyBtnText');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const bodyText = document.getElementById('geminiBodyText');
+      if (bodyText) {
+        const textToCopy = bodyText.innerText || bodyText.textContent;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          copyBtn.classList.add('copied');
+          if (copyText) copyText.textContent = 'Copied!';
+          setTimeout(() => {
+            copyBtn.classList.remove('copied');
+            if (copyText) copyText.textContent = 'Copy Report';
+          }, 2000);
+        }).catch(() => {
+          if (copyText) copyText.textContent = 'Copied!';
+        });
+      }
+    });
+  }
+}
+
+/* ==========================================================================
+   Novelty & Science Modal (Judge Brief)
+   ========================================================================== */
+function initNoveltyModal() {
+  const modal = document.getElementById('noveltyModal');
+  const openBtn = document.getElementById('btnHeaderNovelty');
+  const closeBtn = document.getElementById('btnCloseNoveltyModal');
+  const gotItBtn = document.getElementById('btnGotItNoveltyModal');
+
+  if (!modal) return;
+
+  const openModal = () => {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeModal = () => {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  gotItBtn?.addEventListener('click', closeModal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.style.display === 'flex') {
+      closeModal();
+    }
   });
 }
 

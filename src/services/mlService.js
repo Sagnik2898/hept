@@ -315,16 +315,19 @@ class MLService {
     const expressionMap = new Map();
     if (Array.isArray(inputProfile)) {
       for (const item of inputProfile) {
-        if (item && item.symbol && typeof item.log2FC === 'number') {
-          expressionMap.set(item.symbol.toUpperCase().trim(), item.log2FC);
-        } else if (item && item.symbol && typeof item.value === 'number') {
-          expressionMap.set(item.symbol.toUpperCase().trim(), item.value);
+        if (item && item.symbol) {
+          const raw = item.log2FC !== undefined ? item.log2FC : item.value;
+          const num = Number(raw);
+          if (!isNaN(num)) {
+            expressionMap.set(item.symbol.toUpperCase().trim(), num);
+          }
         }
       }
     } else {
       for (const [key, val] of Object.entries(inputProfile)) {
-        if (typeof val === 'number') {
-          expressionMap.set(key.toUpperCase().trim(), val);
+        const num = Number(val);
+        if (!isNaN(num)) {
+          expressionMap.set(key.toUpperCase().trim(), num);
         }
       }
     }

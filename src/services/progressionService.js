@@ -120,8 +120,9 @@ class ProgressionService {
     // Normalize input profile keys to uppercase
     const profile = {};
     for (const [k, v] of Object.entries(expressionProfile)) {
-      if (typeof v === 'number') {
-        profile[k.toUpperCase().trim()] = v;
+      const num = Number(v);
+      if (!isNaN(num)) {
+        profile[k.toUpperCase().trim()] = num;
       }
     }
 
