@@ -1,0 +1,30 @@
+{
+  "name": "early-liver-cancer-backend",
+  "version": "1.0.0",
+  "description": "High-performance Node.js REST API and Bioinformatic Engine for Early Liver Cancer Detection using biopsy DEG datasets, gene mapping, and metabolic pathway enrichment.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node tests/api.test.js"
+  },
+  "keywords": [
+    "liver-cancer",
+    "hepatocellular-carcinoma",
+    "biomarkers",
+    "metabolic-pathways",
+    "gene-mapping",
+    "bioinformatics",
+    "microarray",
+    "deg"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "xlsx": "^0.18.5"
+  }
+}

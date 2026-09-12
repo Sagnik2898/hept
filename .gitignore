@@ -1,0 +1,30 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment and sensitive credentials
+.env
+.env.local
+.env.*.local
+
+# OS generated files
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store
+
+# IDE and editor files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary / build artifacts
+dist/
+build/
+*.log

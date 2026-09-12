@@ -1,0 +1,138 @@
+[
+  {
+    "id": "hsa00010",
+    "source": "KEGG",
+    "name": "Glycolysis / Gluconeogenesis",
+    "category": "Carbohydrate Metabolism",
+    "description": "Reprogramming of glucose metabolism from hepatic gluconeogenesis to aerobic glycolysis (Warburg effect) during early hepatocarcinogenesis.",
+    "genes": [
+      "HK1", "HK2", "HK3", "GCK", "GPI", "PFKL", "PFKM", "PFKP", "ALDOA", "ALDOB", "ALDOC", 
+      "TPI1", "GAPDH", "PGK1", "PGK2", "PGAM1", "PGAM2", "ENO1", "ENO2", "ENO3", "PKLR", 
+      "PKM", "LDHA", "LDHB", "PCK1", "PCK2", "FBP1", "FBP2", "G6PC", "G6PC2", "PDHA1", "PDHB"
+    ]
+  },
+  {
+    "id": "hsa00071",
+    "source": "KEGG",
+    "name": "Fatty Acid Degradation / Beta-Oxidation",
+    "category": "Lipid Metabolism",
+    "description": "Mitochondrial and peroxisomal fatty acid oxidation, critically impaired during simple steatosis and MASH transition to HCC.",
+    "genes": [
+      "CPT1A", "CPT1B", "CPT2", "SLC25A20", "ACADL", "ACADM", "ACADS", "ACADVL", "EHHADH", 
+      "HADHA", "HADHB", "ACAA1", "ACAA2", "ACOX1", "ACOX2", "ACOX3", "DECR1", "ECI1", "ECI2", 
+      "ADH1A", "ADH1B", "ADH1C", "ADH4", "ALDH2", "ALDH3A2", "ALDH9A1", "ACSL1", "ACSL3", "ACSL4", "ACSL5"
+    ]
+  },
+  {
+    "id": "hsa00061",
+    "source": "KEGG",
+    "name": "Fatty Acid Biosynthesis & Lipogenesis",
+    "category": "Lipid Metabolism",
+    "description": "De novo lipogenesis driving steatosis and cellular membrane synthesis in rapidly proliferating early liver tumors.",
+    "genes": [
+      "ACACA", "ACACB", "FASN", "SCD", "SCD5", "ELOVL6", "FADS1", "FADS2", "ACSL1", 
+      "ACSL3", "ACSL4", "ACSL5", "MCAT", "OXSM", "MECR", "HADH", "SREBF1", "MLXIPL"
+    ]
+  },
+  {
+    "id": "hsa00120",
+    "source": "KEGG",
+    "name": "Primary Bile Acid Biosynthesis",
+    "category": "Lipid Metabolism",
+    "description": "Hepatic conversion of cholesterol into bile acids; dysregulation causes cholestatic hepatotoxicity and promotes oncogenic inflammation.",
+    "genes": [
+      "CYP7A1", "CYP8B1", "CYP27A1", "CYP7B1", "HSD3B7", "AKR1D1", "AKR1C4", "AMACR", 
+      "ACOX2", "HSD17B4", "SCP2", "BAAT", "SLC27A5", "SLC10A1", "ABCB11", "NR1H4", "FXR"
+    ]
+  },
+  {
+    "id": "hsa00830",
+    "source": "KEGG",
+    "name": "Retinol (Vitamin A) Metabolism",
+    "category": "Cofactors & Vitamins",
+    "description": "Depletion of hepatic stellate cell retinoids is an early hallmark trigger of liver fibrosis, cirrhosis, and hepatocellular carcinoma.",
+    "genes": [
+      "ADH1A", "ADH1B", "ADH1C", "ADH4", "RDH5", "RDH8", "RDH10", "RDH11", "RDH16", 
+      "ALDH1A1", "ALDH1A2", "ALDH1A3", "CYP26A1", "CYP26B1", "CYP26C1", "LRAT", "RBP4", 
+      "STRA6", "RARA", "RARB", "RARG", "RXRA", "RXRB", "RXRG", "DGAT1", "RETSAT"
+    ]
+  },
+  {
+    "id": "hsa00020",
+    "source": "KEGG",
+    "name": "Citrate Cycle (TCA Cycle)",
+    "category": "Carbohydrate Metabolism",
+    "description": "Central energetic hub oxidatively metabolizing acetyl-CoA; altered TCA flux provides biosynthetic precursors for early liver tumor growth.",
+    "genes": [
+      "CS", "ACO1", "ACO2", "IDH1", "IDH2", "IDH3A", "IDH3B", "IDH3G", "OGDH", "DLST", 
+      "SUCLG1", "SUCLG2", "SUCLA2", "SDHA", "SDHB", "SDHC", "SDHD", "FH", "MDH1", "MDH2", "PC"
+    ]
+  },
+  {
+    "id": "hsa03320",
+    "source": "KEGG",
+    "name": "PPAR Signaling Pathway",
+    "category": "Lipid Metabolism & Signaling",
+    "description": "Peroxisome proliferator-activated receptors regulating hepatic lipid homeostasis, inflammation, and malignant progression.",
+    "genes": [
+      "PPARA", "PPARD", "PPARG", "RXRA", "RXRB", "RXRG", "CD36", "FABP1", "FABP4", 
+      "SLC27A1", "SLC27A2", "SLC27A4", "SLC27A5", "ACOX1", "CPT1A", "CPT2", "CYP4A11", 
+      "CYP4A22", "ANGPTL4", "PLIN1", "PLIN2", "ME1", "SCD", "FADS2"
+    ]
+  },
+  {
+    "id": "hsa00980",
+    "source": "KEGG",
+    "name": "Metabolism of Xenobiotics by Cytochrome P450",
+    "category": "Xenobiotics Biodegradation",
+    "description": "Hepatic phase I detoxification system; widespread downregulation of CYPs marks early loss of differentiated hepatocyte identity.",
+    "genes": [
+      "CYP1A1", "CYP1A2", "CYP2A6", "CYP2B6", "CYP2C8", "CYP2C9", "CYP2C19", "CYP2D6", 
+      "CYP2E1", "CYP3A4", "CYP3A5", "CYP3A7", "GSTM1", "GSTM2", "GSTM3", "GSTM4", "GSTM5", 
+      "GSTP1", "GSTT1", "UGT1A1", "UGT1A4", "UGT1A6", "UGT1A9", "UGT2B7", "EPHX1", "ALDH3A1"
+    ]
+  },
+  {
+    "id": "hsa00270",
+    "source": "KEGG",
+    "name": "Cysteine and Methionine Metabolism (One-Carbon)",
+    "category": "Amino Acid Metabolism",
+    "description": "MAT1A to MAT2A transcriptional switch and GNMT suppression alters S-adenosylmethionine (SAMe) levels, predisposing hepatocytes to HCC.",
+    "genes": [
+      "MAT1A", "MAT2A", "MAT2B", "GNMT", "AHCY", "CBS", "CSE", "CTH", "BHMT", "BHMT2", 
+      "MTHFR", "MTR", "MSRA", "MSRB1", "MSRB2", "SMS", "SRM", "AMD1", "ODC1"
+    ]
+  },
+  {
+    "id": "hsa00220",
+    "source": "KEGG",
+    "name": "Arginine Biosynthesis and Urea Cycle",
+    "category": "Amino Acid Metabolism",
+    "description": "Hepatic clearance of ammonia; disruption of urea cycle enzymes leads to nitrogen diversion for nucleotide biosynthesis in cancer.",
+    "genes": [
+      "CPS1", "OTC", "ASS1", "ASL", "ARG1", "ARG2", "NAGS", "SLC25A13", "SLC25A15", 
+      "NOS1", "NOS2", "NOS3", "ODC1", "GLUD1", "GLUD2"
+    ]
+  },
+  {
+    "id": "hsa00030",
+    "source": "KEGG",
+    "name": "Pentose Phosphate Pathway",
+    "category": "Carbohydrate Metabolism",
+    "description": "Generates NADPH for reductive biosynthesis and ribose-5-phosphate for nucleotide synthesis essential for malignant transformation.",
+    "genes": [
+      "G6PD", "PGLS", "6PGL", "PGD", "RPE", "RPIA", "TKT", "TALDO1", "PRPS1", "PRPS2", "FBP1", "GPI"
+    ]
+  },
+  {
+    "id": "hsa04151",
+    "source": "KEGG",
+    "name": "PI3K-Akt Signaling Pathway",
+    "category": "Cell Growth & Survival",
+    "description": "Key oncogenic pathway hyperactivated in early hepatocellular carcinoma driving metabolic reprogramming and cell survival.",
+    "genes": [
+      "AKT1", "AKT2", "AKT3", "PIK3CA", "PIK3CB", "PIK3CD", "PIK3R1", "PTEN", "MTOR", 
+      "TSC1", "TSC2", "RPS6KB1", "EIF4EBP1", "GSK3B", "FOXO1", "FOXO3", "MDM2", "BCL2", "BAD"
+    ]
+  }
+]
