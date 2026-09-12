@@ -5,14 +5,6 @@ class GeminiController {
   async interpret(req, res) {
     try {
       const { expressionProfile, mlResult, progression } = req.body;
-
-      if (!geminiService.isConfigured()) {
-        return res.status(503).json({
-          success: false,
-          error: 'Gemini API key is not configured on this server.'
-        });
-      }
-
       const result = await geminiService.generateClinicalInterpretation({
         expressionProfile: expressionProfile || {},
         mlResult: mlResult || {},
@@ -42,13 +34,6 @@ class GeminiController {
         return res.status(400).json({
           success: false,
           error: 'A question string is required.'
-        });
-      }
-
-      if (!geminiService.isConfigured()) {
-        return res.status(503).json({
-          success: false,
-          error: 'Gemini API key is not configured on this server.'
         });
       }
 
