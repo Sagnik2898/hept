@@ -66,8 +66,15 @@ async function runTests() {
     console.log(`✓ Biomarker Risk Scorer Passed: Computed Score ${riskResult.riskScorePercentage}%, Tier: ${riskResult.signalTier} (${riskResult.tierRange}).`);
 
     // 5. Test Live HTTP REST Endpoints
-    console.log('\n[TEST 5] Testing HTTP REST API Endpoints...');
+    console.log('\n[TEST 5] Testing HTTP REST API Endpoints & Frontend Static Delivery...');
     
+    // GET / (Frontend Dashboard)
+    const frontendRes = await fetch(`${BASE_URL}/`);
+    assert.strictEqual(frontendRes.status, 200, 'Frontend root index.html must return 200 OK');
+    const frontendHtml = await frontendRes.text();
+    assert.ok(frontendHtml.includes('HEPATOGUARD'), 'Frontend must serve the HepatoGuard application HTML');
+    console.log('✓ Frontend Static Delivery Passed: index.html served at root URL.');
+
     // /api/health
     const healthRes = await fetch(`${BASE_URL}/api/health`).then(r => r.json());
     assert.strictEqual(healthRes.status, 'HEALTHY', 'Health check must be HEALTHY');
@@ -109,7 +116,142 @@ async function runTests() {
     assert.strictEqual(scoreHttpRes.evaluation.signalTier, 'HIGH SIGNAL');
     assert.strictEqual(scoreHttpRes.evaluation.tierRange, '81–100');
 
-    console.log('✓ All REST Endpoints verified successfully!');
+    // 6. Verify Machine Learning Classifier Service & REST Endpoints
+    console.log('\n[TEST 6] Verifying Machine Learning Classifier Engine & REST Endpoints...');
+    const modelInfo = await fetch(`${BASE_URL}/api/ml/model-info`).then(r => r.json());
+    assert.strictEqual(modelInfo.success, true);
+    assert.strictEqual(modelInfo.model.isTrained, true, 'Model must be trained on server startup');
+    assert.ok(modelInfo.model.featuresCount >= 10, 'Model should have at least 10 key features');
+    assert.ok(modelInfo.model.trainingMetrics.accuracy >= 0.80, `Model accuracy should be >= 80% (got ${modelInfo.model.trainingMetrics.accuracy})`);
+    assert.ok(modelInfo.model.trainingMetrics.aucRoc >= 0.80, `AUC-ROC should be >= 0.80 (got ${modelInfo.model.trainingMetrics.aucRoc})`);
+    console.log(`✓ ML Model Info Verified: ${modelInfo.model.algorithm}, Accuracy: ${(modelInfo.model.trainingMetrics.accuracy * 100).toFixed(1)}%, AUC-ROC: ${modelInfo.model.trainingMetrics.aucRoc}`);
+
+    // Test Malignant Biopsy Prediction via ML
+    const mlMalignantRes = await fetch(`${BASE_URL}/api/ml/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expressionProfile: {
+          SPINK1: 5.5,
+          GPC3: 4.5,
+          AFP: 3.8,
+          MGMT: -2.3,
+          PCK1: -3.1,
+          CYP2E1: -3.5,
+          GNMT: -2.8,
+          SERPINB3: 3.2,
+          AKR1B10: 4.1
+        }
+      })
+    }).then(r => r.json());
+    assert.strictEqual(mlMalignantRes.success, true);
+    assert.strictEqual(mlMalignantRes.prediction, 'EARLY_HCC', 'Malignant biopsy profile must be predicted as EARLY_HCC');
+    assert.ok(mlMalignantRes.cancerProbability >= 0.80, `Malignant probability should be >= 0.80 (got ${mlMalignantRes.cancerProbability})`);
+    assert.ok(mlMalignantRes.featureContributions.length > 0, 'Should return explainable feature contributions');
+    console.log(`✓ ML Malignant Prediction Passed: ${mlMalignantRes.prediction} (Probability: ${(mlMalignantRes.cancerProbability * 100).toFixed(1)}%, Signal: ${mlMalignantRes.signalTier})`);
+
+    // Test Benign/Control Biopsy Prediction via ML
+    const mlBenignRes = await fetch(`${BASE_URL}/api/ml/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expressionProfile: {
+          SPINK1: 0.1,
+          GPC3: -0.2,
+          AFP: 0.0,
+          MGMT: 0.2,
+          PCK1: 0.4,
+          CYP2E1: 0.6,
+          GNMT: 0.3,
+          SERPINB3: 0.1
+        }
+      })
+    }).then(r => r.json());
+    assert.strictEqual(mlBenignRes.success, true);
+    assert.strictEqual(mlBenignRes.prediction, 'BENIGN_PREMALIGNANT', 'Normal/control biopsy must be predicted as BENIGN_PREMALIGNANT');
+    assert.ok(mlBenignRes.cancerProbability < 0.35, `Benign probability should be < 0.35 (got ${mlBenignRes.cancerProbability})`);
+    console.log(`✓ ML Benign Prediction Passed: ${mlBenignRes.prediction} (Probability: ${(mlBenignRes.cancerProbability * 100).toFixed(1)}%, Signal: ${mlBenignRes.signalTier})`);
+
+    // Test On-Demand Retraining Endpoint
+    const trainRes = await fetch(`${BASE_URL}/api/ml/train`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ epochs: 100, learningRate: 0.05, lambda: 0.01 })
+    }).then(r => r.json());
+    assert.strictEqual(trainRes.success, true);
+    assert.ok(trainRes.metrics.accuracy >= 0.80);
+    console.log(`✓ ML Retraining Endpoint Passed: Retrained model with Accuracy: ${(trainRes.metrics.accuracy * 100).toFixed(1)}%`);
+
+    // 7. Verify Biological Disease Progression & Trajectory Engine
+    console.log('\n[TEST 7] Verifying Biological Progression & State Trajectory Engine...');
+    const trajRes = await fetch(`${BASE_URL}/api/progression/trajectory`).then(r => r.json());
+    assert.strictEqual(trajRes.success, true);
+    assert.strictEqual(trajRes.stages.length, 5, 'Should have exactly 5 progression stages');
+    assert.strictEqual(trajRes.stages[0].shortName, 'Healthy');
+    assert.strictEqual(trajRes.stages[4].shortName, 'Early HCC');
+    assert.ok(trajRes.trajectoryMatrix.length >= 10, 'Trajectory matrix should track key diagnostic genes');
+    console.log(`✓ Progression Trajectory Verified: 5 stages mapped across ${trajRes.trajectoryMatrix.length} diagnostic drivers.`);
+
+    // Test Alignment for Pre-Malignant Cirrhotic Transition Profile
+    const cirrhoticProfile = {
+      SPINK1: 2.9, GPC3: 2.2, AFP: 1.8, MGMT: -1.8, PCK1: -2.3,
+      CYP2E1: -2.6, GNMT: -2.0, SERPINB3: 2.5, AKR1B10: 2.8
+    };
+    const alignCirrhosis = await fetch(`${BASE_URL}/api/progression/align`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expressionProfile: cirrhoticProfile })
+    }).then(r => r.json());
+    assert.strictEqual(alignCirrhosis.success, true);
+    assert.strictEqual(alignCirrhosis.isPreMalignantTransitionWindow, true, 'Cirrhosis profile must trigger Pre-Malignant Transition Window flag');
+    assert.ok(alignCirrhosis.trajectoryPosition >= 3.5 && alignCirrhosis.trajectoryPosition <= 4.6, `Coordinate should be between 3.5 and 4.6 (got ${alignCirrhosis.trajectoryPosition})`);
+    assert.ok(alignCirrhosis.activatedHallmarks.length > 0, 'Should identify activated biological hallmarks');
+    console.log(`✓ Pre-Malignant Cirrhosis Alignment Passed: Position ${alignCirrhosis.trajectoryPosition}, Transition Window: ${alignCirrhosis.isPreMalignantTransitionWindow}`);
+
+    // Test Alignment for Early HCC Malignant Profile
+    const alignHCC = await fetch(`${BASE_URL}/api/progression/align`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expressionProfile: patientMalignantProfile })
+    }).then(r => r.json());
+    assert.strictEqual(alignHCC.success, true);
+    assert.strictEqual(alignHCC.estimatedBiologicalState, 'Early Hepatocellular Carcinoma');
+    assert.ok(alignHCC.trajectoryPosition >= 4.0, `Early HCC position should be >= 4.0 (got ${alignHCC.trajectoryPosition})`);
+    console.log(`✓ Early HCC Malignant Alignment Passed: Position ${alignHCC.trajectoryPosition} (${alignHCC.estimatedBiologicalState})`);
+
+    // [TEST 8] Verifying Clinical Biopsy PDF Report Generation & Download...
+    console.log('\n[TEST 8] Verifying Clinical Biopsy PDF Report Generation & Download...');
+    const pdfRes = await fetch(`${BASE_URL}/api/reports/download-pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patientId: 'HEP-TEST-7788',
+        expressionProfile: patientMalignantProfile
+      })
+    });
+    assert.strictEqual(pdfRes.status, 200);
+    assert.strictEqual(pdfRes.headers.get('content-type'), 'application/pdf');
+    const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+    assert.ok(pdfBuffer.length > 2000, `PDF size should be > 2KB (got ${pdfBuffer.length} bytes)`);
+    assert.strictEqual(pdfBuffer.slice(0, 5).toString(), '%PDF-', 'Buffer must begin with standard PDF magic bytes (%PDF-)');
+    console.log(`✓ Clinical Biopsy PDF Download Verified: Generated ${pdfBuffer.length} bytes valid vector PDF document.`);
+
+    // [TEST 9] Verifying Gemini AI Clinical Reasoning & Oncology Copilot
+    console.log('\n[TEST 9] Verifying Gemini AI Clinical Reasoning & Oncology Copilot...');
+    const geminiRes = await fetch(`${BASE_URL}/api/gemini/interpret`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expressionProfile: patientMalignantProfile,
+        mlResult: { riskScorePercentage: 90.84, prediction: 'EARLY_HCC' },
+        progression: { trajectoryPosition: 4.60, estimatedBiologicalState: 'Early Hepatocellular Carcinoma' }
+      })
+    }).then(r => r.json());
+    assert.strictEqual(geminiRes.success, true);
+    assert.ok(geminiRes.interpretation && geminiRes.interpretation.length > 50, 'Gemini should return clinical interpretation');
+    console.log(`✓ Gemini AI Reasoning Passed: Generated ${geminiRes.interpretation.length} chars of oncology-grade narrative via ${geminiRes.modelUsed}.`);
+
+    console.log('\n✓ All REST Endpoints, ML Engines, Biological Progression Trajectories, and PDF Reports verified successfully!');
 
     console.log('\n=======================================================');
     console.log(' ALL TESTS PASSED SUCCESSFULLY! BACKEND READY.        ');

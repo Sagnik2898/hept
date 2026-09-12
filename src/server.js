@@ -1,5 +1,8 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { CONFIG } from './config/index.js';
 import { logger } from './utils/logger.js';
 import { dataIngestionService } from './services/dataIngestionService.js';
@@ -9,12 +12,21 @@ import geneRoutes from './routes/geneRoutes.js';
 import mappingRoutes from './routes/mappingRoutes.js';
 import pathwayRoutes from './routes/pathwayRoutes.js';
 import biomarkerRoutes from './routes/biomarkerRoutes.js';
+import mlRoutes from './routes/mlRoutes.js';
+import progressionRoutes from './routes/progressionRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import geminiRoutes from './routes/geminiRoutes.js';
+import { mlService } from './services/mlService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 // Middlewares
 app.use(cors({ origin: CONFIG.CORS_ORIGIN }));
 app.use(express.json({ limit: '10mb' }));
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Request logger middleware
 app.use((req, res, next) => {
@@ -30,7 +42,7 @@ app.get('/api', (req, res) => {
   res.json({
     service: 'Early Liver Cancer Detection Bioinformatic API',
     version: '1.0.0',
-    description: 'High-throughput backend service analyzing 7 liver biopsy DEG datasets, metabolic pathway reprogramming, probe mapping, and early HCC biomarker identification.',
+    description: 'High-throughput backend service analyzing 7 liver biopsy DEG datasets, metabolic pathway reprogramming, probe mapping, early HCC biomarker identification, and native ML classification.',
     endpoints: {
       health: 'GET /api/health',
       datasets: {
@@ -57,6 +69,15 @@ app.get('/api', (req, res) => {
         earlyDetection: 'GET /api/biomarkers/early-detection?minDatasets=2',
         tiers: 'GET /api/biomarkers/tiers',
         scoreProfile: 'POST /api/biomarkers/score (body: { expressionProfile: { SPINK1: 4.5, GPC3: 3.2, PCK1: -2.1 } })'
+      },
+      machineLearning: {
+        predict: 'POST /api/ml/predict (body: { expressionProfile: { SPINK1: 4.5, GPC3: 3.2, PCK1: -2.1 } })',
+        modelInfo: 'GET /api/ml/model-info',
+        train: 'POST /api/ml/train (body: { epochs: 400, learningRate: 0.05, lambda: 0.01 })'
+      },
+      biologicalProgression: {
+        trajectory: 'GET /api/progression/trajectory',
+        align: 'POST /api/progression/align (body: { expressionProfile: { ... } })'
       }
     }
   });
@@ -69,6 +90,7 @@ app.get('/api/health', (req, res) => {
     uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
     ingestionReady: dataIngestionService.isLoaded,
+    mlModelReady: mlService.isTrained,
     totalDatasets: dataIngestionService.datasets.size,
     totalDEGRecords: dataIngestionService.degDatabase.length,
     totalCatalogedGenes: dataIngestionService.geneSummary.size
@@ -81,6 +103,10 @@ app.use('/api/genes', geneRoutes);
 app.use('/api/mapping', mappingRoutes);
 app.use('/api/pathways', pathwayRoutes);
 app.use('/api/biomarkers', biomarkerRoutes);
+app.use('/api/ml', mlRoutes);
+app.use('/api/progression', progressionRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/gemini', geminiRoutes);
 
 // 404 Handler
 app.use((req, res) => {
@@ -98,6 +124,9 @@ export async function startServer(port = CONFIG.PORT) {
   try {
     // Ingest all 7 biopsy Excel files before opening HTTP port
     await dataIngestionService.loadAllDatasets();
+
+    // Train the In-Memory Machine Learning Classifier
+    mlService.trainModel();
 
     const server = app.listen(port, () => {
       logger.success(`=======================================================`);

@@ -238,7 +238,7 @@ class BiomarkerService {
       };
     }
 
-    const normalizedPercentage = Math.min(100, Math.round((scoreAccumulator / maxPossibleScore) * 100));
+    const normalizedPercentage = Math.min(96, Math.round((scoreAccumulator / maxPossibleScore) * 100));
 
     const tierInfo = getSignalTier(normalizedPercentage);
 

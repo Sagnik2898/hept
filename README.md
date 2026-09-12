@@ -66,9 +66,10 @@ The system is built purely without Python using modern **Node.js (ES Modules)** 
   - **Pentose Phosphate Pathway** (*G6PD, PGLS, TKT*)
 - Performs **Over-Representation Analysis (ORA)** utilizing the exact **Hypergeometric Distribution (Fisher's Exact Test)** and **Benjamini-Hochberg FDR correction** to calculate fold enrichment and statistical significance ($p < 0.05, q < 0.05$).
 
-### 4. Early Liver Cancer Biomarker Classifier & Scorer
-- Tracks canonical and data-driven early transition drivers (*SPINK1, GPC3, AFP, MGMT, CYP2E1, PCK1, GNMT, SERPINB3, TREH*).
-- Evaluates sample biopsy expression vectors and calculates an **Early Malignancy Risk Score (0 - 100%)** with diagnostic risk classification.
+### 4. Machine Learning Classifier & Biomarker Risk Scorer
+- **In-Memory ML Classifier**: Native $L_2$-regularized Logistic Regression (Ridge) with calibrated probabilities and Z-score feature standardization across a 15-gene diagnostic panel (`SPINK1`, `GPC3`, `AFP`, `MGMT`, `PCK1`, `CYP2E1`, `GNMT`, `SERPINB3`, `TREH`, `AKR1B10`, `PEG10`, `CDKN3`, `TOP2A`, `ALDH1A1`, `CPS1`).
+- **Binary Classification**: Categorizes biopsy expression profiles into **`EARLY_HCC`** vs **`BENIGN_PREMALIGNANT`** with exact cancer probability, confidence interval, and explainable feature-level log-odds contributions ($w_j \tilde{x}_j$).
+- **Rule-Based & Statistical Biomarker Scorer**: Computes directional concordance and maps to 5 progression signal tiers (`LOWER SIGNAL` to `HIGH SIGNAL`).
 
 ---
 
@@ -106,7 +107,7 @@ npm test
 ## 📡 REST API Documentation
 
 ### 1. Health & Status
-- **`GET /api/health`**: Returns system uptime, ingestion readiness, total datasets, records, and cataloged genes.
+- **`GET /api/health`**: Returns system uptime, ingestion readiness, ML model status, total datasets, records, and cataloged genes.
 
 ### 2. Biopsy Datasets
 - **`GET /api/datasets`**: List all 7 liver biopsy datasets with clinical metadata, platforms, comparison sheets, and record counts.
@@ -155,16 +156,23 @@ npm test
 | **81–100** | `HIGH SIGNAL` | Strong molecular similarity to the learned progression-associated signature |
 
 - **`POST /api/biomarkers/score`**: Evaluates a biopsy gene expression profile and outputs the score and signal tier.
+
+### 7. Machine Learning (ML) Classification & Explainability
+- **`GET /api/ml/model-info`**: Returns model hyperparameters, 15-gene panel, training accuracy, AUC-ROC, and feature weights.
+- **`POST /api/ml/predict`**: Evaluates a patient biopsy profile through the trained regularized ML classifier.
   - **Body**:
     ```json
     {
       "expressionProfile": {
-        "SPINK1": 5.8,
-        "GPC3": 4.2,
-        "MGMT": -2.1,
+        "SPINK1": 5.5,
+        "GPC3": 4.5,
+        "AFP": 3.8,
+        "MGMT": -2.3,
+        "PCK1": -3.1,
         "CYP2E1": -3.5,
-        "PCK1": -2.4,
-        "GNMT": -1.9
+        "GNMT": -2.8,
+        "SERPINB3": 3.2,
+        "AKR1B10": 4.1
       }
     }
     ```
@@ -172,18 +180,32 @@ npm test
     ```json
     {
       "success": true,
-      "evaluation": {
-        "riskScorePercentage": 86,
-        "riskCategory": "HIGH SIGNAL",
-        "signalTier": "HIGH SIGNAL",
-        "tierRange": "81–100",
-        "tierDescription": "Strong molecular similarity to the learned progression-associated signature",
-        "recommendations": "Strong molecular concordance with early Hepatocellular Carcinoma transcriptomic signature. Immediate multiphasic CT/MRI and clinical biopsy confirmation recommended.",
-        "evaluatedMarkersCount": 6,
-        "evaluatedGenes": [...]
+      "prediction": "EARLY_HCC",
+      "cancerProbability": 0.9412,
+      "riskScorePercentage": 94,
+      "decisionThreshold": 0.50,
+      "confidenceScore": 0.88,
+      "signalTier": "HIGH SIGNAL",
+      "tierRange": "81–100",
+      "featureContributions": [
+        {
+          "symbol": "SPINK1",
+          "observedValue": 5.5,
+          "standardizedValue": 1.42,
+          "modelWeight": 0.485,
+          "logOddsContribution": 0.689,
+          "impact": "INCREASES_CANCER_RISK"
+        },
+        ...
+      ],
+      "modelMetadata": {
+        "algorithm": "L2-Regularized Logistic Regression (Ridge)",
+        "trainingAccuracy": 1.0,
+        "aucRoc": 1.0
       }
     }
     ```
+- **`POST /api/ml/train`**: Retrain model on-demand with custom hyperparameters (e.g. `{ "epochs": 400, "learningRate": 0.05, "lambda": 0.01 }`).
 
 ---
 

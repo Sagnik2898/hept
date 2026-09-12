@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Early Liver Cancer Detection | Machine Learning & Bioinformatic Platform</title>
+  <meta name="description" content="Clinical decision support & bioinformatic platform for early hepatocellular carcinoma detection using 7 human biopsy cohorts, metabolic pathway reprogramming, and native machine learning.">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Top Navigation Header -->
+    <header class="header" role="banner">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>HEPATOGUARD</h1>
+          <p>Early Liver Cancer Multi-Cohort Biosystem</p>
+        </div>
+      </div>
+
+      <div class="header-meta">
+        <div class="system-status" id="systemStatusBadge">
+          <span class="status-dot"></span>
+          <span id="systemStatusText">Connecting...</span>
+        </div>
+
+        <div class="header-stats">
+          <div class="stat-pill">
+            <span class="val" id="statDatasets">7</span>
+            <span class="lbl">Biopsy Cohorts</span>
+          </div>
+          <div class="stat-pill">
+            <span class="val" id="statRecords">36,490</span>
+            <span class="lbl">DEG Records</span>
+          </div>
+          <div class="stat-pill">
+            <span class="val" id="statGenes">7,949</span>
+            <span class="lbl">Cataloged Genes</span>
+          </div>
+          <button type="button" class="btn-header-pdf" id="btnHeaderDownloadPdf" title="Export Clinical Biopsy PDF Report">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download PDF</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Bar Tabs -->
+    <nav class="nav-tabs" role="tablist" aria-label="Main Navigation">
+      <button class="tab-btn active" data-tab="ml-predictor" role="tab" aria-selected="true" id="tabBtnPredictor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Live ML Predictor
+      </button>
+      <button class="tab-btn" data-tab="progression" role="tab" aria-selected="false" id="tabBtnProgression">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Biological Progression
+      </button>
+      <button class="tab-btn" data-tab="datasets" role="tab" aria-selected="false" id="tabBtnDatasets">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Biopsy Cohorts (7)
+      </button>
+      <button class="tab-btn" data-tab="genes" role="tab" aria-selected="false" id="tabBtnGenes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Gene Profiler
+      </button>
+      <button class="tab-btn" data-tab="pathways" role="tab" aria-selected="false" id="tabBtnPathways">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Metabolic Pathways
+      </button>
+      <button class="tab-btn" data-tab="ml-console" role="tab" aria-selected="false" id="tabBtnConsole">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        ML Console & Weights
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main role="main">
+
+      <!-- ===================================================================
+           TAB 1: LIVE MACHINE LEARNING PREDICTOR
+           =================================================================== -->
+      <section id="panel-ml-predictor" class="tab-panel active" role="tabpanel">
+        
+        <!-- Live Correlation Pipeline Banner: Explaining How ML and Biology Connect -->
+        <div class="correlation-sync-banner">
+          <div class="sync-step">
+            <div class="sync-step-badge">STEP 1</div>
+            <div class="sync-step-info">
+              <span class="sync-step-title">Biopsy Transcriptome</span>
+              <span class="sync-step-desc">15 key biomarker log2FC expression sliders</span>
+            </div>
+          </div>
+          <div class="sync-arrow">➔</div>
+          <div class="sync-step">
+            <div class="sync-step-badge">STEP 2</div>
+            <div class="sync-step-info">
+              <span class="sync-step-title">ML Risk Classifier</span>
+              <span class="sync-step-desc">Ridge logistic regression computes malignancy probability</span>
+            </div>
+          </div>
+          <div class="sync-arrow">➔</div>
+          <div class="sync-step">
+            <div class="sync-step-badge">STEP 3</div>
+            <div class="sync-step-info">
+              <span class="sync-step-title">Biological Progression</span>
+              <span class="sync-step-desc">Multi-cohort alignment (continuous coordinate 1.0 to 5.0)</span>
+            </div>
+          </div>
+          <div class="sync-arrow">➔</div>
+          <div class="sync-step highlight-window">
+            <div class="sync-step-badge alert">STAGE 3.4–4.6</div>
+            <div class="sync-step-info">
+              <span class="sync-step-title">Pre-Malignant Window</span>
+              <span class="sync-step-desc">Critical early detection window before irreversible HCC</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ml-grid">
+          
+          <!-- Left Column: Biopsy Expression Vector Inputs -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <div>
+                  <h2>Patient Biopsy Expression Profile</h2>
+                  <p>Input log2 fold changes for the 15 diagnostic transition genes</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preset Samples Bar -->
+            <div class="presets-container">
+              <span class="presets-label">Simulate Clinical Biopsy:</span>
+              <button class="preset-btn preset-malignant" id="presetMalignantBtn" type="button" title="Stage 4.8 | High Malignancy Signal">
+                Early HCC Malignant
+                <span class="preset-badge red">Stage 4.8</span>
+              </button>
+              <button class="preset-btn" id="presetCirrhosisBtn" type="button" style="border-color: #f59e0b; color: #fcd34d;" title="Stage 4.1 | Critical Pre-Malignant Transition Phase">
+                Cirrhosis (Phase)
+                <span class="preset-badge yellow">Stage 4.1 ⚠️</span>
+              </button>
+              <button class="preset-btn" id="presetMashBtn" type="button" title="Stage 3.2 | Active MASH / Fibrosis">
+                Active MASH
+                <span class="preset-badge amber">Stage 3.2</span>
+              </button>
+              <button class="preset-btn" id="presetSteatosisBtn" type="button" title="Stage 2.1 | Benign Steatosis">
+                Simple Steatosis
+                <span class="preset-badge gray">Stage 2.1</span>
+              </button>
+              <button class="preset-btn preset-benign" id="presetBenignBtn" type="button" title="Stage 1.0 | Healthy Liver Control">
+                Healthy Control
+                <span class="preset-badge green">Stage 1.0</span>
+              </button>
+              <button class="preset-btn" id="presetResetBtn" type="button">Reset</button>
+            </div>
+
+            <!-- Gene Sliders -->
+            <div class="gene-inputs-scroll" id="geneInputsContainer">
+              <!-- Dynamically populated via JS -->
+            </div>
+
+            <div class="form-actions">
+              <button class="btn-primary" id="runMlPredictBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Run ML Cancer Risk Analysis
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: ML Classification & Explainability Output -->
+          <div class="card ml-result-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <div>
+                  <h2>ML Diagnostic Risk Output</h2>
+                  <p>L2-Regularized Logistic Regression inference</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- SVG Circular Gauge Meter -->
+            <div class="gauge-section">
+              <div class="gauge-svg-container">
+                <svg class="gauge-svg" viewBox="0 0 200 110">
+                  <defs>
+                    <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#10b981" />
+                      <stop offset="40%" stop-color="#f59e0b" />
+                      <stop offset="80%" stop-color="#f43f5e" />
+                    </linearGradient>
+                  </defs>
+                  <!-- Background Arc (semicircle r=80, stroke=14) -->
+                  <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" />
+                  <!-- Value Arc -->
+                  <path id="gaugePath" class="gauge-val" d="M 20 100 A 80 80 0 0 1 180 100" />
+                </svg>
+                <div class="gauge-number">
+                  <span class="percent" id="gaugeScoreVal">--</span>
+                  <span class="label">Malignancy Risk</span>
+                </div>
+              </div>
+
+              <div class="prediction-badge-container">
+                <div id="predictionPill" class="pred-pill malignant">EARLY_HCC</div>
+                <div id="tierDescriptionBox" class="tier-box">
+                  Strong molecular concordance with early Hepatocellular Carcinoma transcriptomic signature.
+                </div>
+                <div id="mlBiologicalStatePill" style="margin-top: 0.5rem; font-size: 0.75rem; font-family: var(--font-mono); color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); padding: 0.25rem 0.75rem; border-radius: var(--radius-full); display: inline-block;">
+                  Biological Continuum: <span id="mlStateVal" style="font-weight: 700; color: #fff;">Stage 4.5 (Pre-Malignant Window)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Biological Disease Progression Alignment -->
+            <div class="ml-progression-box" id="mlProgressionBox">
+              <div class="ml-progression-header">
+                <span class="ml-progression-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Biological Progression Alignment
+                </span>
+                <span class="ml-progression-coord" id="mlCoordPill">Stage 4.5 / 5.0</span>
+              </div>
+
+              <!-- 5-Stage Mini Stepper Ribbon -->
+              <div class="ml-mini-stepper" id="mlMiniStepper">
+                <div class="ml-mini-step" id="miniStep_1">
+                  <span class="step-num-badge">1</span>
+                  <span class="step-name-text">Healthy</span>
+                  <span class="step-concordance" id="miniConcord_1">--%</span>
+                </div>
+                <div class="ml-mini-step" id="miniStep_2">
+                  <span class="step-num-badge">2</span>
+                  <span class="step-name-text">Steatosis</span>
+                  <span class="step-concordance" id="miniConcord_2">--%</span>
+                </div>
+                <div class="ml-mini-step" id="miniStep_3">
+                  <span class="step-num-badge">3</span>
+                  <span class="step-name-text">MASH</span>
+                  <span class="step-concordance" id="miniConcord_3">--%</span>
+                </div>
+                <div class="ml-mini-step stage-4" id="miniStep_4">
+                  <span class="step-num-badge">4</span>
+                  <span class="step-name-text">Cirrhosis</span>
+                  <span class="step-concordance" id="miniConcord_4">--%</span>
+                </div>
+                <div class="ml-mini-step stage-5" id="miniStep_5">
+                  <span class="step-num-badge">5</span>
+                  <span class="step-name-text">Early HCC</span>
+                  <span class="step-concordance" id="miniConcord_5">--%</span>
+                </div>
+              </div>
+
+              <!-- Clinical Correlation Narrative Callout -->
+              <div class="ml-correlation-box" id="mlCorrelationCallout">
+                <div class="ml-correlation-lead" id="mlCorrelationLead">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  <span id="mlCorrelationTitle">Clinical Correlation Synthesis</span>
+                </div>
+                <p class="ml-correlation-text" id="mlCorrelationText">
+                  Evaluating patient transcriptome against multi-cohort biological cascade...
+                </p>
+              </div>
+
+              <!-- Active Biological Hallmarks Tag Cluster -->
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <span style="font-size: 0.6875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Activated Biological Hallmarks</span>
+                <div class="ml-hallmarks-tags" id="mlHallmarksTags">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end;">
+                <button type="button" class="ml-jump-btn" id="btnJumpToTrajectory">
+                  View Full Multi-Gene Kinetics & Trajectory
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Feature Attribution (Explainability) Breakdown -->
+            <div class="attribution-container">
+              <div class="attribution-header">
+                <span>GENE ATTRIBUTION (LOG-ODDS)</span>
+                <span>RISK IMPACT</span>
+              </div>
+              <div class="attribution-list" id="attributionList">
+                <!-- Dynamically populated with feature contributions -->
+              </div>
+            </div>
+
+            <!-- Google Gemini Precision Oncology Copilot & Deep Reasoning -->
+            <div class="gemini-reasoning-card" id="geminiReasoningCard">
+              <div class="gemini-header">
+                <div class="gemini-title-group">
+                  <span class="gemini-sparkle-icon">✨</span>
+                  <div>
+                    <span class="gemini-title">Gemini AI Clinical Reasoning</span>
+                    <span class="gemini-model-tag">Google Gemini 3.6 Flash</span>
+                  </div>
+                </div>
+                <button type="button" class="gemini-refresh-btn" id="btnRefreshGemini" title="Refresh Gemini Molecular Analysis">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  Re-Analyze
+                </button>
+              </div>
+
+              <!-- Gemini Output Container -->
+              <div class="gemini-content-box" id="geminiContentBox">
+                <div class="gemini-loading-shimmer" id="geminiLoadingShimmer" style="display: none;">
+                  <span class="shimmer-text">✨ Gemini 3.6 Flash is analyzing multi-gene molecular cascade...</span>
+                </div>
+                <div class="gemini-body-text" id="geminiBodyText">
+                  Click <strong>Run ML Cancer Risk Analysis</strong> or use the prompt below to generate oncology-grade molecular reasoning for this biopsy.
+                </div>
+              </div>
+
+              <!-- Interactive Ask Gemini Oncologist Bar -->
+              <div class="gemini-interactive-bar">
+                <div class="gemini-quick-chips">
+                  <button type="button" class="gemini-chip" data-q="Why is SPINK1 activation critical in this patient?">SPINK1 Role</button>
+                  <button type="button" class="gemini-chip" data-q="Explain the metabolic consequences of PCK1 shutdown.">PCK1 Shutdown</button>
+                  <button type="button" class="gemini-chip" data-q="What is the recommended imaging and surveillance timeline?">Clinical Next Steps</button>
+                </div>
+                <div class="gemini-input-group">
+                  <input type="text" id="geminiQuestionInput" class="gemini-input" placeholder="Ask Gemini any oncology or molecular question about this biopsy...">
+                  <button type="button" id="btnAskGemini" class="gemini-ask-btn">
+                    <span>Ask</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Download Clinical Biopsy PDF Report Button -->
+            <button type="button" class="btn-download-pdf" id="btnDownloadReportPdf">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download Clinical Biopsy Report (PDF)</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Responsive Biological Trajectory Graph Cloned directly into ML Predictor View -->
+        <div class="card ml-trajectory-clone-card" id="mlTrajectoryCloneCard">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon" style="background: rgba(16, 185, 129, 0.12); color: var(--accent-emerald);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div>
+                <h2>Live Molecular Trajectory & Continuum Alignment</h2>
+                <p>Real-time patient biopsy gene overlay mapped across 5 biological progression stages</p>
+              </div>
+            </div>
+
+            <!-- Trajectory Interactive Filter & State Badge -->
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <div class="clone-graph-filters" id="cloneGraphFilters">
+                <button class="filter-pill active" data-filter="all" type="button">All 8 Drivers</button>
+                <button class="filter-pill" data-filter="risk" type="button">Risk Drivers (Up)</button>
+                <button class="filter-pill" data-filter="protective" type="button">Guardians (Down)</button>
+                <button class="filter-pill" data-filter="top-ml" type="button">Top ML Driver</button>
+              </div>
+              <div class="clone-live-status-pill" id="cloneLiveStatusPill">
+                <span class="live-pulse-dot" id="cloneLivePulseDot"></span>
+                <span id="cloneLiveStatusText">Aligning Biopsy...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reader Guide Banner for Immediate Clarity -->
+          <div class="trajectory-guide-bar">
+            <div class="guide-item">
+              <span class="guide-icon">📈</span>
+              <div class="guide-content">
+                <span class="guide-title">5-Stage Kinetic Curves</span>
+                <span class="guide-desc">Empirical trajectory derived from 36,490 biopsy samples across stages 1–5.</span>
+              </div>
+            </div>
+            <div class="guide-item">
+              <span class="guide-icon">📍</span>
+              <div class="guide-content">
+                <span class="guide-title">Patient Laser Needle</span>
+                <span class="guide-desc">Patient's continuous biological coordinate (Stage 1.0 to 5.0) from ML inference.</span>
+              </div>
+            </div>
+            <div class="guide-item">
+              <span class="guide-icon">💎</span>
+              <div class="guide-content">
+                <span class="guide-title">Patient Observed Points</span>
+                <span class="guide-desc">Patient's actual biopsy expression levels plotted directly on the needle.</span>
+              </div>
+            </div>
+            <div class="guide-item">
+              <span class="guide-icon">⚠️</span>
+              <div class="guide-content">
+                <span class="guide-title">Critical Window (3.4–4.6)</span>
+                <span class="guide-desc">High-risk pre-neoplastic transition zone before irreversible carcinoma.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cross-Stage Progressive Molecular Gene Significance Stats Bar -->
+          <div class="progression-stats-bar" id="mlProgressionStatsBar">
+            <div class="prog-stat-card stat-surge">
+              <div class="prog-stat-top">
+                <span class="prog-stat-icon">🚀</span>
+                <span class="prog-stat-tag tag-red">Max Oncogenic Surge</span>
+              </div>
+              <div class="prog-stat-main">
+                <span class="prog-stat-gene" id="mlStatSurgeGene">SPINK1</span>
+                <span class="prog-stat-val val-red" id="mlStatSurgeVal">+5.80 log2FC</span>
+              </div>
+              <div class="prog-stat-footer">
+                <span id="mlStatSurgeSub">Dynamic Span: 1.0 ➔ 5.0</span>
+                <span class="prog-stat-sig">p = 4.2e-22</span>
+              </div>
+            </div>
+
+            <div class="prog-stat-card stat-tipping">
+              <div class="prog-stat-top">
+                <span class="prog-stat-icon">⚡</span>
+                <span class="prog-stat-tag tag-yellow">Pre-Malignant Tipping</span>
+              </div>
+              <div class="prog-stat-main">
+                <span class="prog-stat-gene" id="mlStatTippingGene">SERPINB3</span>
+                <span class="prog-stat-val val-yellow" id="mlStatTippingVal">+2.80 log2FC</span>
+              </div>
+              <div class="prog-stat-footer">
+                <span id="mlStatTippingSub">Surges @ Window 3.4–4.6</span>
+                <span class="prog-stat-sig">p = 1.8e-17</span>
+              </div>
+            </div>
+
+            <div class="prog-stat-card stat-collapse">
+              <div class="prog-stat-top">
+                <span class="prog-stat-icon">📉</span>
+                <span class="prog-stat-tag tag-green">Metabolic Shutdown</span>
+              </div>
+              <div class="prog-stat-main">
+                <span class="prog-stat-gene" id="mlStatCollapseGene">PCK1</span>
+                <span class="prog-stat-val val-green" id="mlStatCollapseVal">-3.10 log2FC</span>
+              </div>
+              <div class="prog-stat-footer">
+                <span id="mlStatCollapseSub">Gluconeogenesis (-88%)</span>
+                <span class="prog-stat-sig">p = 6.9e-19</span>
+              </div>
+            </div>
+
+            <div class="prog-stat-card stat-perturbed">
+              <div class="prog-stat-top">
+                <span class="prog-stat-icon">🔬</span>
+                <span class="prog-stat-tag tag-cyan">Significant Drivers Altered</span>
+              </div>
+              <div class="prog-stat-main">
+                <span class="prog-stat-gene" id="mlStatPerturbedCount">8 / 8</span>
+                <span class="prog-stat-val val-cyan" id="mlStatPerturbedPct">100% Active</span>
+              </div>
+              <div class="prog-stat-footer">
+                <span id="mlStatPerturbedSub">Threshold: |log2FC| ≥ 1.5</span>
+                <span class="prog-stat-sig">FDR q &lt; 10⁻¹²</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SVG Chart Container -->
+          <div class="trajectory-chart-wrapper" style="position: relative;">
+            <svg class="trajectory-svg" id="mlTrajectoryCloneSvg" viewBox="0 0 880 390" style="height: 390px;">
+              <!-- Dynamically populated via JS -->
+            </svg>
+            <div id="trajectoryTooltip" class="trajectory-tooltip" style="display: none;"></div>
+
+            <div class="trajectory-legend" style="margin-top: 0.75rem;">
+              <div class="legend-item">
+                <div class="legend-dot" style="background: #10b981;"></div>
+                <span>Metabolic Guardians (PCK1, CYP2E1, GNMT)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background: #f59e0b;"></div>
+                <span>Dysplasia Inducers (SERPINB3, AKR1B10)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background: #f43f5e;"></div>
+                <span>Oncofetal Re-awakening (SPINK1, GPC3, AFP)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background: #38bdf8; border: 2px solid #fff;"></div>
+                <span style="color: #fff; font-weight: 700;">Glowing Diamond: Patient's Current Observed Expression</span>
+              </div>
+              <div class="legend-item">
+                <div style="width: 14px; height: 10px; background: rgba(245, 158, 11, 0.2); border: 1px dashed #f59e0b; border-radius: 2px;"></div>
+                <span style="color: #fcd34d;">Pre-Malignant Transition Window (Stage 3.4–4.6)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Gene Selector Strip -->
+          <div class="gene-select-strip" id="cloneGeneSelectStrip">
+            <span style="font-size: 0.6875rem; font-weight: 700; color: var(--text-muted); align-self: center; margin-right: 0.5rem; text-transform: uppercase;">
+              Click Biomarker to Inspect:
+            </span>
+            <!-- Dynamically populated via JS with gene chips -->
+          </div>
+
+          <!-- Biomarker Clinical Inspector Panel -->
+          <div class="biomarker-inspector-card" id="biomarkerInspectorCard">
+            <div class="inspector-top-bar">
+              <div class="inspector-left">
+                <div class="inspector-gene-badge" id="inspGeneSymbol">PCK1</div>
+                <div class="inspector-meta">
+                  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <span class="inspector-meta-title" id="inspGeneTitle">Phosphoenolpyruvate Carboxykinase 1</span>
+                    <span class="inspector-cat-badge" id="inspCategoryBadge">Metabolic Guardian</span>
+                  </div>
+                  <div class="inspector-meta-role" id="inspGeneRole">Rate-limiting gluconeogenic enzyme; severe shutdown marks Warburg transition to aerobic glycolysis.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="inspector-metrics-grid">
+              <div class="inspector-metric-box">
+                <span class="inspector-metric-label">Patient Biopsy Value</span>
+                <span class="inspector-metric-val risk-up" id="inspPatientVal">-3.10 log2FC</span>
+                <span class="inspector-metric-sub">Observed in current biopsy</span>
+              </div>
+              <div class="inspector-metric-box">
+                <span class="inspector-metric-label">Stage Baseline Norm</span>
+                <span class="inspector-metric-val" id="inspStageVal">-2.30 log2FC</span>
+                <span class="inspector-metric-sub">Cohort average at Stage <span id="inspStageSub">4.5</span></span>
+              </div>
+              <div class="inspector-metric-box">
+                <span class="inspector-metric-label">Expression Gap (Δ)</span>
+                <span class="inspector-metric-val" id="inspGapVal">-0.80 Δ</span>
+                <span class="inspector-metric-sub" id="inspGapSub">0.80 log2FC lower than stage norm</span>
+              </div>
+              <div class="inspector-metric-box">
+                <span class="inspector-metric-label">ML Log-Odds Impact</span>
+                <span class="inspector-metric-val risk-up" id="inspImpactVal">+1.84</span>
+                <span class="inspector-metric-sub" id="inspImpactSub">Pushes classification toward cancer</span>
+              </div>
+            </div>
+
+            <!-- Clinical Takeaway Narrative Note -->
+            <div class="inspector-takeaway-note" id="inspTakeawayNote">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span id="inspTakeawayText">Evaluating biomarker clinical significance...</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB: BIOLOGICAL PROGRESSION & MOLECULAR TRAJECTORY
+           =================================================================== -->
+      <section id="panel-progression" class="tab-panel" role="tabpanel">
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div>
+                <h2>Human Hepatocarcinogenesis Molecular Progression Cascade</h2>
+                <p>Tracking progressive gene dynamics across 5 biological stages from 7 multi-cohort biopsies</p>
+              </div>
+            </div>
+            <!-- Interactive Stage Simulator Presets -->
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="preset-btn" id="simStage1" type="button">Stage 1: Healthy</button>
+              <button class="preset-btn" id="simStage2" type="button">Stage 2: Steatosis</button>
+              <button class="preset-btn" id="simStage3" type="button">Stage 3: MASH</button>
+              <button class="preset-btn preset-malignant" id="simStage4" type="button" style="border-color: #f59e0b; color: #fcd34d;">Stage 4: Cirrhosis (Phase)</button>
+              <button class="preset-btn preset-malignant" id="simStage5" type="button">Stage 5: Early HCC</button>
+            </div>
+          </div>
+
+          <!-- 5-Stage Disease Stepper -->
+          <div class="progression-stepper" id="progressionStepper">
+            <!-- Dynamically populated via JS -->
+          </div>
+
+          <!-- Biological Continuum Meter -->
+          <div class="continuum-card">
+            <div class="continuum-header">
+              <span class="continuum-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                PATIENT BIOLOGICAL STATE CONTINUUM
+              </span>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                <span style="font-size: 0.8125rem; color: var(--text-muted);">Coordinate:</span>
+                <span class="continuum-pos-val" id="continuumPosDisplay">4.5 / 5.0</span>
+                <span style="font-size: 0.875rem; font-weight: 700; color: #fff;" id="continuumStateDisplay">(Cirrhosis / Dysplasia)</span>
+              </div>
+            </div>
+
+            <div class="continuum-track-wrapper">
+              <div class="continuum-track">
+                <div class="continuum-marker" id="continuumMarker"></div>
+              </div>
+              <div class="continuum-ticks">
+                <span>1.0 Healthy</span>
+                <span>2.0 Steatosis</span>
+                <span>3.0 MASH</span>
+                <span>4.0 Cirrhosis / Dysplasia</span>
+                <span>5.0 Early HCC</span>
+              </div>
+            </div>
+
+            <!-- Transition Window Alert Callout -->
+            <div class="transition-alert-box" id="transitionAlertBox">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Cross-Stage Progressive Molecular Gene Significance Stats Bar -->
+          <div class="progression-stats-bar" id="progressionStatsBar">
+            <div class="prog-stat-card stat-surge">
+              <div class="prog-stat-top">
+                <span class="prog-stat-icon">🚀</span>
+                <span class="prog-stat-tag tag-red">Max Oncogenic Surge</span>
+              </div>
+              <div class="prog-stat-main">
+                <span class="prog-stat-gene" id="progStatSurgeGene">SPINK1</span>
+                <span class="prog-stat-val val-red" id="progStatSurgeVal">+5.80 log2FC</span>
+              </div>
+              <div class="prog-stat-footer">
+                <span id="progStatSurgeSub">Dynamic Span: 1.0 ➔ 5.0</span>
+                <span class="prog-stat-sig">p = 4.2e-22</span>
+              </div>
+            </div>
+
+            <div class="prog-stat-card stat-tipping">
+              <div class="prog-stat-top">
+                <span class="prog-stat-icon">⚡</span>
+                <span class="prog-stat-tag tag-yellow">Pre-Malignant Tipping</span>
+              </div>
+              <div class="prog-stat-main">
+                <span class="prog-stat-gene" id="progStatTippingGene">SERPINB3</span>
+                <span class="prog-stat-val val-yellow" id="progStatTippingVal">+2.80 log2FC</span>
+              </div>
+              <div class="prog-stat-footer">
+                <span id="progStatTippingSub">Surges @ Window 3.4–4.6</span>
+                <span class="prog-stat-sig">p = 1.8e-17</span>
+              </div>
+            </div>
+
+            <div class="prog-stat-card stat-collapse">
+              <div class="prog-stat-top">
+                <span class="prog-stat-icon">📉</span>
+                <span class="prog-stat-tag tag-green">Metabolic Shutdown</span>
+              </div>
+              <div class="prog-stat-main">
+                <span class="prog-stat-gene" id="progStatCollapseGene">PCK1</span>
+                <span class="prog-stat-val val-green" id="progStatCollapseVal">-3.10 log2FC</span>
+              </div>
+              <div class="prog-stat-footer">
+                <span id="progStatCollapseSub">Gluconeogenesis (-88%)</span>
+                <span class="prog-stat-sig">p = 6.9e-19</span>
+              </div>
+            </div>
+
+            <div class="prog-stat-card stat-perturbed">
+              <div class="prog-stat-top">
+                <span class="prog-stat-icon">🔬</span>
+                <span class="prog-stat-tag tag-cyan">Significant Drivers Altered</span>
+              </div>
+              <div class="prog-stat-main">
+                <span class="prog-stat-gene" id="progStatPerturbedCount">8 / 8</span>
+                <span class="prog-stat-val val-cyan" id="progStatPerturbedPct">100% Active</span>
+              </div>
+              <div class="prog-stat-footer">
+                <span id="progStatPerturbedSub">Threshold: |log2FC| ≥ 1.5</span>
+                <span class="prog-stat-sig">FDR q &lt; 10⁻¹²</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Multi-Gene Trajectory SVG Chart -->
+          <div class="trajectory-chart-wrapper">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <h3 style="font-size: 1.0625rem; font-weight: 700; color: #fff;">Molecular Gene Trajectory Dynamics (Log2FC across Stages 1–5)</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">Empirical expression kinetics derived from 36,490 human biopsy records</p>
+              </div>
+              <div class="trajectory-legend">
+                <div class="legend-item">
+                  <div class="legend-dot" style="background: #10b981;"></div>
+                  <span>Metabolic Guardians (PCK1, CYP2E1, GNMT)</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background: #f59e0b;"></div>
+                  <span>Pre-Neoplastic Dysplasia Inducers (SERPINB3, AKR1B10)</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background: #f43f5e;"></div>
+                  <span>Oncofetal Drivers (SPINK1, GPC3, AFP, PEG10)</span>
+                </div>
+              </div>
+            </div>
+
+            <svg class="trajectory-svg" id="trajectorySvg" viewBox="0 0 800 280">
+              <!-- Dynamically rendered trajectory curves via JS -->
+            </svg>
+          </div>
+
+          <!-- Active Biological Hallmarks Grid -->
+          <div style="margin-top: 1.5rem;">
+            <h3 style="font-size: 1.0625rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Activated Biological Hallmarks in Patient Biopsy</h3>
+            <div class="hallmarks-container" id="hallmarksContainer">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 2: BIOPSY COHORTS (7 GEO DATASETS)
+           =================================================================== -->
+      <section id="panel-datasets" class="tab-panel" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
+              <div>
+                <h2>Multi-Stage Human Liver Biopsy Cohorts</h2>
+                <p>7 clinically validated transcriptomic studies spanning early liver carcinogenesis</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="datasets-grid" id="datasetsGrid">
+            <!-- Populated via JS from /api/datasets -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 3: CROSS-STAGE GENE PROFILER
+           =================================================================== -->
+      <section id="panel-genes" class="tab-panel" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </div>
+              <div>
+                <h2>Cross-Stage Gene Expression Profiler</h2>
+                <p>Inspect differential regulation across all progression stages</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-bar-container">
+            <div class="search-input-wrapper">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" id="geneSearchInput" class="search-input" placeholder="Enter Gene Symbol (e.g. SPINK1, GPC3, PCK1, CYP2E1)..." value="SPINK1">
+            </div>
+            <button class="btn-primary" id="geneSearchBtn" type="button" style="flex: 0 0 140px;">Search</button>
+          </div>
+
+          <div class="gene-profile-view" id="geneProfileResult">
+            <!-- Dynamically populated from /api/genes/profile/:symbol -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 4: METABOLIC PATHWAY REPROGRAMMING
+           =================================================================== -->
+      <section id="panel-pathways" class="tab-panel" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </div>
+              <div>
+                <h2>Metabolic Pathway Reprogramming</h2>
+                <p>Curated liver metabolic pathways with Hypergeometric Over-Representation Analysis (ORA)</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="pathway-grid" id="pathwaysGrid">
+            <!-- Populated from /api/pathways -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 5: ML MODEL ARCHITECTURE & RETRAINING CONSOLE
+           =================================================================== -->
+      <section id="panel-ml-console" class="tab-panel" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div>
+                <h2>Machine Learning Console & Feature Weights</h2>
+                <p>Inspect model parameters or trigger on-demand training across cohort contrasts</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="ml-console-grid">
+            <!-- Retrain Form -->
+            <div class="card" style="background: rgba(30, 41, 59, 0.4);">
+              <h3 style="font-size: 1.125rem; margin-bottom: 1rem; color: #fff;">Hyperparameters & Retraining</h3>
+              <form id="retrainForm" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                  <label for="inputEpochs" style="font-size: 0.8125rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Training Epochs</label>
+                  <input type="number" id="inputEpochs" value="400" min="50" max="2000" class="search-input" style="padding: 0.5rem 0.75rem;">
+                </div>
+                <div>
+                  <label for="inputLearningRate" style="font-size: 0.8125rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Learning Rate</label>
+                  <input type="number" id="inputLearningRate" value="0.05" step="0.01" min="0.001" max="1.0" class="search-input" style="padding: 0.5rem 0.75rem;">
+                </div>
+                <div>
+                  <label for="inputLambda" style="font-size: 0.8125rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Ridge L2 Penalty</label>
+                  <input type="number" id="inputLambda" value="0.01" step="0.005" min="0" max="0.5" class="search-input" style="padding: 0.5rem 0.75rem;">
+                </div>
+                <button type="submit" class="btn-primary" id="retrainBtn" style="margin-top: 0.5rem;">
+                  Retrain Model Now
+                </button>
+              </form>
+
+              <div id="retrainMetricsOutput" style="margin-top: 1.5rem; display: none; padding: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); font-size: 0.8125rem; color: #34d399;">
+                <!-- Updated metrics after retraining -->
+              </div>
+            </div>
+
+            <!-- Model Weights Table -->
+            <div class="card" style="background: rgba(30, 41, 59, 0.4);">
+              <h3 style="font-size: 1.125rem; margin-bottom: 1rem; color: #fff;">Feature Coefficients</h3>
+              <div class="weights-table-wrapper">
+                <table class="data-table" id="weightsTable">
+                  <thead>
+                    <tr>
+                      <th>Biomarker Gene</th>
+                      <th>Expected in HCC</th>
+                      <th>Model Weight</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Populated via JS from /api/ml/model-info -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+      <div>Early Liver Cancer Detection Platform &copy; 2026. Built with Node.js & Machine Learning.</div>
+      <div>Multi-Cohort Human Liver Transcriptomics Backend Active</div>
+    </footer>
+
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
