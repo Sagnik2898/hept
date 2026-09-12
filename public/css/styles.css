@@ -665,9 +665,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .gauge-number .percent {
   font-family: var(--font-mono);
-  font-size: 2.25rem;
+  font-size: 1.65rem;
   font-weight: 800;
   line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .gauge-number .label {
