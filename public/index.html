@@ -803,6 +803,40 @@
             </div>
           </div>
 
+          <!-- Cohorts Summary Header Metrics Strip -->
+          <div class="cohorts-summary-strip">
+            <div class="cohort-metric-card">
+              <span class="metric-val">7</span>
+              <span class="metric-lbl">GEO Cohorts</span>
+              <span class="metric-sub">Multi-Cohort Verified</span>
+            </div>
+            <div class="cohort-metric-card">
+              <span class="metric-val">36,490</span>
+              <span class="metric-lbl">Total DEG Records</span>
+              <span class="metric-sub">Human Biopsies</span>
+            </div>
+            <div class="cohort-metric-card">
+              <span class="metric-val">7,949</span>
+              <span class="metric-lbl">Harmonized Genes</span>
+              <span class="metric-sub">HGNC Standardized</span>
+            </div>
+            <div class="cohort-metric-card">
+              <span class="metric-val">21</span>
+              <span class="metric-lbl">Stage Comparisons</span>
+              <span class="metric-sub">Healthy to Early HCC</span>
+            </div>
+          </div>
+
+          <!-- Dataset Filter Pills Bar -->
+          <div class="cohort-filter-bar">
+            <span class="cohort-filter-label">Filter Cohorts:</span>
+            <button type="button" class="cohort-filter-btn active" data-cohort-filter="all">All 7 Cohorts</button>
+            <button type="button" class="cohort-filter-btn" data-cohort-filter="hcc">Early HCC Malignancy</button>
+            <button type="button" class="cohort-filter-btn" data-cohort-filter="cirrhosis">Cirrhosis (Pre-Malignant)</button>
+            <button type="button" class="cohort-filter-btn" data-cohort-filter="mash">MASH / Fibrosis</button>
+            <button type="button" class="cohort-filter-btn" data-cohort-filter="steatosis">Steatosis & Controls</button>
+          </div>
+
           <div class="datasets-grid" id="datasetsGrid">
             <!-- Populated via JS from /api/datasets -->
           </div>
@@ -821,17 +855,32 @@
               </div>
               <div>
                 <h2>Cross-Stage Gene Expression Profiler</h2>
-                <p>Inspect differential regulation across all progression stages</p>
+                <p>Inspect differential regulation across all progression stages from 36,490 biopsy records</p>
               </div>
             </div>
           </div>
 
+          <!-- Search Input Bar -->
           <div class="search-bar-container">
             <div class="search-input-wrapper">
               <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               <input type="text" id="geneSearchInput" class="search-input" placeholder="Enter Gene Symbol (e.g. SPINK1, GPC3, PCK1, CYP2E1)..." value="SPINK1">
             </div>
-            <button class="btn-primary" id="geneSearchBtn" type="button" style="flex: 0 0 140px;">Search</button>
+            <button class="btn-primary" id="geneSearchBtn" type="button" style="flex: 0 0 140px;">Search Gene</button>
+          </div>
+
+          <!-- Recommended Diagnostic Biomarkers Quick-Chips -->
+          <div class="gene-quick-search-bar" id="geneQuickSearchBar">
+            <span class="quick-search-lbl">Quick Biomarkers:</span>
+            <button type="button" class="quick-gene-chip active" data-gene="SPINK1">SPINK1 (Oncogenic)</button>
+            <button type="button" class="quick-gene-chip" data-gene="GPC3">GPC3 (Oncofetal)</button>
+            <button type="button" class="quick-gene-chip" data-gene="PCK1">PCK1 (Warburg Loss)</button>
+            <button type="button" class="quick-gene-chip" data-gene="CYP2E1">CYP2E1 (Detox)</button>
+            <button type="button" class="quick-gene-chip" data-gene="GNMT">GNMT (Methylome)</button>
+            <button type="button" class="quick-gene-chip" data-gene="SERPINB3">SERPINB3 (Cirrhosis)</button>
+            <button type="button" class="quick-gene-chip" data-gene="AKR1B10">AKR1B10 (Dysplasia)</button>
+            <button type="button" class="quick-gene-chip" data-gene="AFP">AFP (Marker)</button>
+            <button type="button" class="quick-gene-chip" data-gene="TREH">TREH (Repressed)</button>
           </div>
 
           <div class="gene-profile-view" id="geneProfileResult">

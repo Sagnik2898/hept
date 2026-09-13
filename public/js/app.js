@@ -1476,18 +1476,73 @@ function renderProgressionResults(res) {
 }
 
 /* ==========================================================================
-   Tab 2: Biopsy Cohorts (7 Datasets) View
+   Tab 2: Biopsy Cohorts (7 GEO Datasets) View & Filter Engine
    ========================================================================== */
+let cachedDatasetsList = [];
+let currentCohortFilter = 'all';
+
 async function initDatasetsView() {
   const container = document.getElementById('datasetsGrid');
   if (!container) return;
+
+  // Filter Buttons
+  const filterBtns = document.querySelectorAll('.cohort-filter-btn');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCohortFilter = btn.getAttribute('data-cohort-filter') || 'all';
+      renderFilteredDatasets();
+    });
+  });
 
   try {
     const res = await fetch('/api/datasets');
     const data = await res.json();
     if (!data.success || !data.datasets) return;
 
-    container.innerHTML = data.datasets.map(d => `
+    cachedDatasetsList = data.datasets;
+    renderFilteredDatasets();
+  } catch (err) {
+    console.error('Error fetching datasets:', err);
+    container.innerHTML = `<div style="color: #f43f5e; padding: 2rem;">Failed to load biopsy cohorts.</div>`;
+  }
+}
+
+function renderFilteredDatasets() {
+  const container = document.getElementById('datasetsGrid');
+  if (!container || !cachedDatasetsList) return;
+
+  let filtered = cachedDatasetsList;
+  if (currentCohortFilter === 'hcc') {
+    filtered = cachedDatasetsList.filter(d => d.accession === 'GSE41804' || d.accession === 'GSE63067' || (d.diseaseStage || '').includes('HCC'));
+  } else if (currentCohortFilter === 'cirrhosis') {
+    filtered = cachedDatasetsList.filter(d => d.accession === 'GSE46300' || d.accession === 'GSE49541' || (d.diseaseStage || '').includes('Cirrhosis'));
+  } else if (currentCohortFilter === 'mash') {
+    filtered = cachedDatasetsList.filter(d => d.accession === 'GSE89632' || (d.diseaseStage || '').includes('NASH') || (d.diseaseStage || '').includes('MASH'));
+  } else if (currentCohortFilter === 'steatosis') {
+    filtered = cachedDatasetsList.filter(d => d.accession === 'GSE48452' || d.accession === 'GSE5093' || (d.diseaseStage || '').includes('Steatosis'));
+  }
+
+  // Key biomarker mapping per cohort
+  const cohortTopBiomarker = {
+    'GSE41804': 'SPINK1',
+    'GSE48452': 'PCK1',
+    'GSE5093': 'CYP2E1',
+    'GSE63067': 'GPC3',
+    'GSE89632': 'GNMT',
+    'GSE46300': 'SERPINB3',
+    'GSE49541': 'AKR1B10'
+  };
+
+  container.innerHTML = filtered.map(d => {
+    const topGene = cohortTopBiomarker[d.accession] || 'SPINK1';
+    const stageLower = (d.diseaseStage || '').toLowerCase();
+    const stageClass = stageLower.includes('hcc') ? 'hcc' :
+      (stageLower.includes('cirrhosis') ? 'cirrhosis' :
+      (stageLower.includes('nash') || stageLower.includes('mash') ? 'mash' : 'steatosis'));
+
+    return `
       <div class="dataset-card">
         <div>
           <div class="dataset-header">
@@ -1497,24 +1552,45 @@ async function initDatasetsView() {
           <h3 class="dataset-title" style="margin-top: 0.75rem;">${d.title}</h3>
           <p class="dataset-desc" style="margin-top: 0.5rem;">${d.description || ''}</p>
         </div>
+
         <div>
           <div class="dataset-meta-row">
-            <span class="stage-tag">${d.diseaseStage}</span>
+            <span class="stage-tag ${stageClass}">${d.diseaseStage}</span>
             <span style="font-family: var(--font-mono); font-weight: 700; color: #38bdf8;">${(d.totalRecords || 0).toLocaleString()} Records</span>
           </div>
-          <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
-            Comparisons: ${d.comparisons ? d.comparisons.map(c => c.name).join(', ') : 'Standard'}
+
+          <div class="cohort-comparisons-wrap">
+            <span class="cohort-comp-lbl">Biopsy Comparisons (${d.comparisons ? d.comparisons.length : 0}):</span>
+            <div class="cohort-comp-pills">
+              ${(d.comparisons || []).slice(0, 4).map(c => `
+                <span class="cohort-comp-pill" title="${c.name} (${c.recordCount} records)">
+                  ${c.name} <span class="count">${c.recordCount}</span>
+                </span>
+              `).join('')}
+              ${d.comparisons && d.comparisons.length > 4 ? `<span class="cohort-comp-pill">+${d.comparisons.length - 4} more</span>` : ''}
+            </div>
           </div>
+
+          <button type="button" class="cohort-btn-explore" onclick="exploreCohortGene('${topGene}')">
+            <span>Explore Driver <strong>${topGene}</strong> in Gene Profiler</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
         </div>
       </div>
-    `).join('');
-  } catch (err) {
-    console.error('Error fetching datasets:', err);
-  }
+    `;
+  }).join('');
 }
 
+window.exploreCohortGene = function(symbol) {
+  const geneTab = document.querySelector('.tab-btn[data-tab="genes"]');
+  if (geneTab) geneTab.click();
+  const input = document.getElementById('geneSearchInput');
+  if (input) input.value = symbol;
+  searchGene(symbol);
+};
+
 /* ==========================================================================
-   Tab 3: Gene Expression Profiler
+   Tab 3: Gene Expression Profiler Engine
    ========================================================================== */
 function initGeneSearch() {
   const searchBtn = document.getElementById('geneSearchBtn');
@@ -1525,60 +1601,129 @@ function initGeneSearch() {
     searchInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') searchGene(searchInput.value);
     });
-    // Initial search
-    searchGene('SPINK1');
   }
+
+  // Quick Chips
+  document.querySelectorAll('.quick-gene-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.quick-gene-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const sym = chip.getAttribute('data-gene');
+      if (sym) {
+        if (searchInput) searchInput.value = sym;
+        searchGene(sym);
+      }
+    });
+  });
+
+  // Initial search
+  searchGene('SPINK1');
 }
 
 async function searchGene(symbol) {
-  if (!symbol) return;
+  const cleanSym = (symbol || '').toUpperCase().trim();
+  if (!cleanSym) return;
+
   const container = document.getElementById('geneProfileResult');
   if (!container) return;
 
-  container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading profile for ${symbol}...</div>`;
+  // Highlight matching quick chip if exists
+  document.querySelectorAll('.quick-gene-chip').forEach(chip => {
+    if (chip.getAttribute('data-gene') === cleanSym) {
+      chip.classList.add('active');
+    } else {
+      chip.classList.remove('active');
+    }
+  });
+
+  container.innerHTML = `
+    <div style="text-align: center; color: var(--text-muted); padding: 2.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" style="animation: spin 1s linear infinite; color: var(--accent-cyan);">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
+      <span>Searching 36,490 differential expression records for <strong>${cleanSym}</strong>...</span>
+    </div>
+  `;
 
   try {
-    const res = await fetch(`/api/genes/profile/${encodeURIComponent(symbol.toUpperCase().trim())}`);
+    const res = await fetch(`/api/genes/profile/${encodeURIComponent(cleanSym)}`);
     const data = await res.json();
 
     if (!data.success || !data.gene) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
-          No differentially expressed records found for gene <strong>${symbol}</strong> in the biopsy database.
+        <div style="text-align: center; padding: 2.5rem; color: var(--text-muted); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
+          <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔍</div>
+          <div style="font-size: 0.9375rem; color: #fff; font-weight: 700;">No Biopsy Records Found for "${cleanSym}"</div>
+          <p style="font-size: 0.8125rem; margin-top: 0.35rem;">
+            This gene may not meet the differential expression threshold (|log2FC| ≥ 1.0, p < 0.05) or may use an alternate alias.
+          </p>
+          <div style="margin-top: 1rem;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Try a top diagnostic biomarker:</span>
+            <div style="display: flex; gap: 0.4rem; justify-content: center; margin-top: 0.5rem;">
+              <button class="quick-gene-chip" onclick="searchGene('SPINK1')">SPINK1</button>
+              <button class="quick-gene-chip" onclick="searchGene('PCK1')">PCK1</button>
+              <button class="quick-gene-chip" onclick="searchGene('GPC3')">GPC3</button>
+              <button class="quick-gene-chip" onclick="searchGene('CYP2E1')">CYP2E1</button>
+            </div>
+          </div>
         </div>
       `;
       return;
     }
 
     const g = data.gene;
+    const occurrences = g.occurrences || [];
+    const upCount = occurrences.filter(o => o.regulation === 'UPREGULATED').length;
+    const downCount = occurrences.filter(o => o.regulation === 'DOWNREGULATED').length;
+    const primaryDir = upCount >= downCount ? 'UPREGULATED' : 'DOWNREGULATED';
+    const isUp = primaryDir === 'UPREGULATED';
+
     container.innerHTML = `
       <div class="gene-summary-card">
         <div class="gene-details">
-          <h3>${g.symbol}</h3>
-          <p>${g.title || 'Human Protein-Coding Gene'}</p>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h3>${g.symbol}</h3>
+            <span class="reg-badge ${isUp ? 'up' : 'down'}">${primaryDir}</span>
+          </div>
+          <p>${g.title || 'Human Protein-Coding Biomarker Gene'}</p>
+          <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--text-muted);">
+            Probes Mapped: <strong style="color: #fff; font-family: var(--font-mono);">${(g.uniqueProbes || []).length}</strong>
+          </div>
         </div>
-        <div style="display: flex; gap: 1.5rem;">
+
+        <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
           <div class="stat-pill">
-            <span class="val" style="color: var(--accent-cyan);">${g.datasetsDetectedIn?.length || 0}</span>
-            <span class="lbl">Datasets</span>
+            <span class="val" style="color: var(--accent-cyan);">${(g.datasetsDetectedIn || []).length} / 7</span>
+            <span class="lbl">Cohorts Detected</span>
           </div>
           <div class="stat-pill">
-            <span class="val" style="color: #fb7185;">${(g.maxAbsLog2FC || 0).toFixed(2)}</span>
-            <span class="lbl">Max |Log2FC|</span>
+            <span class="val" style="color: ${isUp ? '#fda4af' : '#6ee7b7'};">
+              ${typeof g.maxAbsLog2FC === 'number' ? (isUp ? '+' : '-') + Math.abs(g.maxAbsLog2FC).toFixed(2) : 'N/A'}
+            </span>
+            <span class="lbl">Peak Log2FC</span>
           </div>
           <div class="stat-pill">
-            <span class="val">${g.occurrences?.length || 0}</span>
+            <span class="val">${occurrences.length}</span>
             <span class="lbl">Total Occurrences</span>
           </div>
         </div>
       </div>
 
-      <div class="occurrences-table-wrapper" style="margin-top: 1rem;">
+      <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+          Differential Expression Records (${occurrences.length} Multi-Stage Comparisons)
+        </span>
+        <button type="button" class="btn-secondary" style="padding: 0.35rem 0.8rem; font-size: 0.75rem;" onclick="testGeneInPredictor('${g.symbol}')">
+          ⚡ Test ${g.symbol} in Live ML Predictor
+        </button>
+      </div>
+
+      <div class="occurrences-table-wrapper" style="margin-top: 0.5rem;">
         <table class="data-table">
           <thead>
             <tr>
               <th>Dataset</th>
-              <th>Comparison / Sheet</th>
+              <th>Comparison / Condition</th>
               <th>Stage Category</th>
               <th>Probe ID</th>
               <th>Log2FC</th>
@@ -1587,32 +1732,59 @@ async function searchGene(symbol) {
             </tr>
           </thead>
           <tbody>
-            ${(g.occurrences || []).map(occ => `
-              <tr>
-                <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-cyan);">${occ.dataset}</td>
-                <td>${occ.sheet}</td>
-                <td><span style="font-weight: 600; color: #fbbf24;">${occ.stage}</span></td>
-                <td style="font-family: var(--font-mono); font-size: 0.75rem;">${occ.probeId}</td>
-                <td style="font-family: var(--font-mono); font-weight: 700; color: ${occ.log2FoldChange > 0 ? '#fda4af' : '#6ee7b7'};">
-                  ${occ.log2FoldChange > 0 ? '+' : ''}${occ.log2FoldChange.toFixed(2)}
-                </td>
-                <td style="font-family: var(--font-mono);">${occ.pValue ? occ.pValue.toExponential(2) : 'N/A'}</td>
-                <td>
-                  <span class="reg-badge ${occ.regulation === 'UPREGULATED' ? 'up' : 'down'}">
-                    ${occ.regulation}
-                  </span>
-                </td>
-              </tr>
-            `).join('')}
+            ${occurrences.map(occ => {
+              const fc = Number(occ.log2FoldChange || 0);
+              const isOccUp = fc > 0;
+              let pValStr = 'N/A';
+              if (typeof occ.pValue === 'number') {
+                pValStr = occ.pValue === 0 ? '< 1.00e-50' : occ.pValue.toExponential(2);
+              }
+
+              return `
+                <tr>
+                  <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-cyan);">${occ.dataset}</td>
+                  <td style="font-size: 0.78125rem;">${occ.sheet}</td>
+                  <td><span style="font-weight: 600; color: #fbbf24; font-size: 0.75rem;">${occ.stage}</span></td>
+                  <td style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">${occ.probeId}</td>
+                  <td style="font-family: var(--font-mono); font-weight: 700; color: ${isOccUp ? '#fda4af' : '#6ee7b7'};">
+                    ${fc > 0 ? '+' : ''}${fc.toFixed(2)}
+                  </td>
+                  <td style="font-family: var(--font-mono); font-size: 0.75rem;">${pValStr}</td>
+                  <td>
+                    <span class="reg-badge ${occ.regulation === 'UPREGULATED' ? 'up' : 'down'}">
+                      ${occ.regulation}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
     `;
   } catch (err) {
     console.error('Error fetching gene profile:', err);
-    container.innerHTML = `<div style="color: #f43f5e; padding: 1rem;">Failed to load gene profile.</div>`;
+    container.innerHTML = `<div style="color: #f43f5e; padding: 2rem; text-align: center;">Failed to load gene profile: ${err.message}</div>`;
   }
 }
+
+window.testGeneInPredictor = function(symbol) {
+  const predictorTab = document.querySelector('.tab-btn[data-tab="ml-predictor"]');
+  if (predictorTab) predictorTab.click();
+  const slider = document.getElementById(`slider_${symbol}`);
+  if (slider) {
+    slider.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const card = slider.closest('.gene-input-card');
+    if (card) {
+      card.style.borderColor = 'var(--accent-cyan)';
+      card.style.boxShadow = '0 0 15px rgba(6, 182, 212, 0.4)';
+      setTimeout(() => {
+        card.style.borderColor = '';
+        card.style.boxShadow = '';
+      }, 2500);
+    }
+  }
+};
 
 /* ==========================================================================
    Tab 4: Metabolic Pathways View
