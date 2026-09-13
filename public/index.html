@@ -69,10 +69,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         Biopsy Cohorts (7)
       </button>
-      <button class="tab-btn" data-tab="genes" role="tab" aria-selected="false" id="tabBtnGenes">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        Gene Profiler
-      </button>
       <button class="tab-btn" data-tab="pathways" role="tab" aria-selected="false" id="tabBtnPathways">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Metabolic Pathways
@@ -839,63 +835,6 @@
 
           <div class="datasets-grid" id="datasetsGrid">
             <!-- Populated via JS from /api/datasets -->
-          </div>
-        </div>
-      </section>
-
-      <!-- ===================================================================
-           TAB 3: CROSS-STAGE GENE PROFILER
-           =================================================================== -->
-      <section id="panel-genes" class="tab-panel" role="tabpanel">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title-group">
-              <div class="card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              </div>
-              <div>
-                <h2>Cross-Stage Gene Expression Profiler</h2>
-                <p>Inspect differential regulation across all progression stages from 36,490 biopsy records</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Search Input Bar with Live Autocomplete -->
-          <div class="search-bar-container">
-            <div class="search-input-wrapper">
-              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="text" id="geneSearchInput" class="search-input" placeholder="Search Gene (e.g. SPINK1, GPC3, PCK1, CYP2E1, TP53, 209220_at)..." value="SPINK1" autocomplete="off" spellcheck="false">
-              <button type="button" class="search-clear-btn" id="geneSearchClearBtn" title="Clear search input" style="display: none;">✕</button>
-              <div class="gene-autocomplete-dropdown" id="geneAutocompleteDropdown" style="display: none;"></div>
-            </div>
-            <button class="btn-primary" id="geneSearchBtn" type="button" style="flex: 0 0 140px;">Search Gene</button>
-          </div>
-
-          <!-- Search Hint Banner -->
-          <div class="search-helper-hint">
-            <span>💡 Search <strong>7,949 biopsy genes</strong> by <strong>Symbol</strong> (e.g. <code>SPINK1</code>, <code>GPC3</code>, <code>TP53</code>, <code>CYP</code>), <strong>Probe ID</strong> (e.g. <code>209220_at</code>), or <strong>Functional Name</strong> (e.g. <code>glypican</code>, <code>protease</code>).</span>
-          </div>
-
-          <!-- Recommended Diagnostic Biomarkers Quick-Chips -->
-          <div class="gene-quick-search-bar" id="geneQuickSearchBar">
-            <span class="quick-search-lbl">Quick Biomarkers:</span>
-            <button type="button" class="quick-gene-chip active" data-gene="SPINK1">SPINK1 (Oncogenic)</button>
-            <button type="button" class="quick-gene-chip" data-gene="GPC3">GPC3 (Oncofetal)</button>
-            <button type="button" class="quick-gene-chip" data-gene="PCK1">PCK1 (Warburg Loss)</button>
-            <button type="button" class="quick-gene-chip" data-gene="CYP2E1">CYP2E1 (Detox)</button>
-            <button type="button" class="quick-gene-chip" data-gene="GNMT">GNMT (Methylome)</button>
-            <button type="button" class="quick-gene-chip" data-gene="SERPINB3">SERPINB3 (Cirrhosis)</button>
-            <button type="button" class="quick-gene-chip" data-gene="AKR1B10">AKR1B10 (Dysplasia)</button>
-            <button type="button" class="quick-gene-chip" data-gene="AFP">AFP (Marker)</button>
-            <button type="button" class="quick-gene-chip" data-gene="TREH">TREH (Repressed)</button>
-            <button type="button" class="quick-gene-chip" data-gene="SPP1">SPP1 (Osteopontin)</button>
-            <button type="button" class="quick-gene-chip" data-gene="ACTA2">ACTA2 (Fibrosis)</button>
-            <button type="button" class="quick-gene-chip" data-gene="ALDOA">ALDOA (Glycolysis)</button>
-            <button type="button" class="quick-gene-chip" data-gene="MGMT">MGMT (DNA Repair)</button>
-          </div>
-
-          <div class="gene-profile-view" id="geneProfileResult">
-            <!-- Dynamically populated from /api/genes/profile/:symbol -->
           </div>
         </div>
       </section>
