@@ -1592,16 +1592,64 @@ window.exploreCohortGene = function(symbol) {
 /* ==========================================================================
    Tab 3: Gene Expression Profiler Engine
    ========================================================================== */
+let autocompleteDebounce = null;
+
 function initGeneSearch() {
   const searchBtn = document.getElementById('geneSearchBtn');
   const searchInput = document.getElementById('geneSearchInput');
+  const clearBtn = document.getElementById('geneSearchClearBtn');
+  const dropdown = document.getElementById('geneAutocompleteDropdown');
 
   if (searchBtn && searchInput) {
-    searchBtn.addEventListener('click', () => searchGene(searchInput.value));
-    searchInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') searchGene(searchInput.value);
+    // Search on button click
+    searchBtn.addEventListener('click', () => {
+      closeAutocomplete();
+      searchGene(searchInput.value);
+    });
+
+    // Keydown listener: support Enter and Escape
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        closeAutocomplete();
+        searchGene(searchInput.value);
+      } else if (e.key === 'Escape') {
+        closeAutocomplete();
+      }
+    });
+
+    // Input listener: toggle clear button & fetch live autocomplete
+    searchInput.addEventListener('input', (e) => {
+      const val = (e.target.value || '').trim();
+      if (clearBtn) clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
+
+      clearTimeout(autocompleteDebounce);
+      if (val.length >= 2) {
+        autocompleteDebounce = setTimeout(() => {
+          fetchGeneAutocomplete(val);
+        }, 180);
+      } else {
+        closeAutocomplete();
+      }
     });
   }
+
+  // Clear button click
+  if (clearBtn && searchInput) {
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.style.display = 'none';
+      closeAutocomplete();
+      searchInput.focus();
+    });
+  }
+
+  // Close dropdown on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-input-wrapper')) {
+      closeAutocomplete();
+    }
+  });
 
   // Quick Chips
   document.querySelectorAll('.quick-gene-chip').forEach(chip => {
@@ -1610,7 +1658,11 @@ function initGeneSearch() {
       chip.classList.add('active');
       const sym = chip.getAttribute('data-gene');
       if (sym) {
-        if (searchInput) searchInput.value = sym;
+        if (searchInput) {
+          searchInput.value = sym;
+          if (clearBtn) clearBtn.style.display = 'flex';
+        }
+        closeAutocomplete();
         searchGene(sym);
       }
     });
@@ -1620,9 +1672,74 @@ function initGeneSearch() {
   searchGene('SPINK1');
 }
 
+function closeAutocomplete() {
+  const dropdown = document.getElementById('geneAutocompleteDropdown');
+  if (dropdown) {
+    dropdown.style.display = 'none';
+    dropdown.innerHTML = '';
+  }
+}
+
+async function fetchGeneAutocomplete(query) {
+  const dropdown = document.getElementById('geneAutocompleteDropdown');
+  if (!dropdown) return;
+
+  try {
+    const res = await fetch(`/api/genes/autocomplete?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    if (!data.success || !data.suggestions || data.suggestions.length === 0) {
+      dropdown.style.display = 'none';
+      return;
+    }
+
+    dropdown.innerHTML = data.suggestions.map(s => {
+      const isUp = s.primaryDir === 'UP';
+      return `
+        <div class="autocomplete-item" data-symbol="${s.symbol}">
+          <div class="autocomplete-left">
+            <span class="autocomplete-symbol">${s.symbol}</span>
+            <span class="autocomplete-dir-tag ${isUp ? 'up' : 'down'}">${isUp ? '▲ UP' : '▼ DOWN'}</span>
+            <span class="autocomplete-title">${s.title || ''}</span>
+          </div>
+          <div class="autocomplete-right">
+            <span class="autocomplete-cohorts">${s.datasetCount} cohorts</span>
+            <span class="autocomplete-fc" style="color: ${isUp ? '#fda4af' : '#6ee7b7'};">
+              ${isUp ? '+' : '-'}${s.maxAbsLog2FC} FC
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    dropdown.style.display = 'block';
+
+    dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const sym = item.getAttribute('data-symbol');
+        const input = document.getElementById('geneSearchInput');
+        if (input) input.value = sym;
+        const clearBtn = document.getElementById('geneSearchClearBtn');
+        if (clearBtn) clearBtn.style.display = 'flex';
+        closeAutocomplete();
+        searchGene(sym);
+      });
+    });
+  } catch (err) {
+    console.warn('Autocomplete fetch failed:', err);
+    dropdown.style.display = 'none';
+  }
+}
+
 async function searchGene(symbol) {
   const cleanSym = (symbol || '').toUpperCase().trim();
   if (!cleanSym) return;
+
+  const input = document.getElementById('geneSearchInput');
+  if (input && input.value.trim().toUpperCase() !== cleanSym) {
+    input.value = cleanSym;
+  }
+  const clearBtn = document.getElementById('geneSearchClearBtn');
+  if (clearBtn) clearBtn.style.display = 'flex';
 
   const container = document.getElementById('geneProfileResult');
   if (!container) return;
@@ -1650,20 +1767,24 @@ async function searchGene(symbol) {
     const data = await res.json();
 
     if (!data.success || !data.gene) {
+      const suggestions = data.suggestions || [];
       container.innerHTML = `
-        <div style="text-align: center; padding: 2.5rem; color: var(--text-muted); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
-          <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔍</div>
-          <div style="font-size: 0.9375rem; color: #fff; font-weight: 700;">No Biopsy Records Found for "${cleanSym}"</div>
-          <p style="font-size: 0.8125rem; margin-top: 0.35rem;">
-            This gene may not meet the differential expression threshold (|log2FC| ≥ 1.0, p < 0.05) or may use an alternate alias.
+        <div style="text-align: center; padding: 2.5rem 1.5rem; color: var(--text-muted); background: rgba(15, 23, 42, 0.6); border-radius: var(--radius-lg); border: 1px dashed rgba(56, 189, 248, 0.35);">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+          <div style="font-size: 1.1rem; color: #fff; font-weight: 700;">No Biopsy Records Found for "${cleanSym}"</div>
+          <p style="font-size: 0.85rem; max-width: 580px; margin: 0.5rem auto 1.25rem auto; color: var(--text-secondary); line-height: 1.5;">
+            ${data.error || 'This gene is not significantly altered in the 7 human liver biopsy datasets, or may use a legacy platform probe identifier.'}
           </p>
-          <div style="margin-top: 1rem;">
-            <span style="font-size: 0.75rem; color: var(--text-muted);">Try a top diagnostic biomarker:</span>
-            <div style="display: flex; gap: 0.4rem; justify-content: center; margin-top: 0.5rem;">
-              <button class="quick-gene-chip" onclick="searchGene('SPINK1')">SPINK1</button>
-              <button class="quick-gene-chip" onclick="searchGene('PCK1')">PCK1</button>
-              <button class="quick-gene-chip" onclick="searchGene('GPC3')">GPC3</button>
-              <button class="quick-gene-chip" onclick="searchGene('CYP2E1')">CYP2E1</button>
+          <div style="background: rgba(30, 41, 59, 0.5); border-radius: var(--radius-md); padding: 1rem; max-width: 700px; margin: 0 auto; border: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.78125rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 0.65rem;">
+              ⚡ Explore Recommended Diagnostic & Metabolic Biomarkers:
+            </div>
+            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+              ${suggestions.map(s => `
+                <button type="button" class="variant-chip" onclick="searchGene('${s.symbol}')" title="${s.title} | ${s.datasetCount} Cohorts">
+                  <strong>${s.symbol}</strong> <span style="font-size: 0.65rem; opacity: 0.75;">(${s.primaryDir || 'FC'})</span>
+                </button>
+              `).join('')}
             </div>
           </div>
         </div>
@@ -1678,7 +1799,30 @@ async function searchGene(symbol) {
     const primaryDir = upCount >= downCount ? 'UPREGULATED' : 'DOWNREGULATED';
     const isUp = primaryDir === 'UPREGULATED';
 
+    const matchBannerHtml = (g.matchedBy && g.matchedBy !== 'EXACT_SYMBOL') ? `
+      <div class="search-match-banner">
+        <div>
+          <span>🎯 Query <strong>"${cleanSym}"</strong> resolved to <strong>${g.symbol}</strong> (${g.title || ''})</span>
+        </div>
+        <span class="match-source-tag">${g.matchedBy}</span>
+      </div>
+    ` : '';
+
+    const variantsHtml = (g.matchingVariants && g.matchingVariants.length > 0) ? `
+      <div class="matching-variants-bar">
+        <span class="matching-variants-lbl">Related Genes Matching "${cleanSym}":</span>
+        ${g.matchingVariants.map(v => `
+          <button type="button" class="variant-chip" onclick="searchGene('${v.symbol}')" title="${v.title || ''} (${v.datasetCount} cohorts)">
+            <strong>${v.symbol}</strong> <span style="font-size: 0.625rem; opacity: 0.8;">(${v.primaryDir === 'UPREGULATED' ? '+' : '-'}${v.maxAbsLog2FC} FC)</span>
+          </button>
+        `).join('')}
+      </div>
+    ` : '';
+
     container.innerHTML = `
+      ${matchBannerHtml}
+      ${variantsHtml}
+
       <div class="gene-summary-card">
         <div class="gene-details">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -1688,6 +1832,7 @@ async function searchGene(symbol) {
           <p>${g.title || 'Human Protein-Coding Biomarker Gene'}</p>
           <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--text-muted);">
             Probes Mapped: <strong style="color: #fff; font-family: var(--font-mono);">${(g.uniqueProbes || []).length}</strong>
+            ${(g.uniqueProbes || []).length > 0 ? `(${g.uniqueProbes.slice(0, 3).join(', ')}${g.uniqueProbes.length > 3 ? '...' : ''})` : ''}
           </div>
         </div>
 

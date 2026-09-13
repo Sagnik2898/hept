@@ -3553,6 +3553,208 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: var(--text-muted);
 }
 
+.search-clear-btn {
+  position: absolute;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-muted);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.search-clear-btn:hover {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: #f43f5e;
+  color: #fff;
+}
+
+/* Autocomplete Dropdown Popup */
+.gene-autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.autocomplete-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item:hover, .autocomplete-item.selected {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.autocomplete-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.autocomplete-symbol {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+.autocomplete-dir-tag {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+
+.autocomplete-dir-tag.up {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fda4af;
+}
+
+.autocomplete-dir-tag.down {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+.autocomplete-title {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocomplete-right {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+}
+
+.autocomplete-cohorts {
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.autocomplete-fc {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+/* Helper Hint Below Search Bar */
+.search-helper-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: -0.4rem;
+  margin-bottom: 0.9rem;
+  padding-left: 0.35rem;
+  line-height: 1.4;
+}
+
+.search-helper-hint code {
+  font-family: var(--font-mono);
+  font-size: 0.71875rem;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+
+/* Search Match Banner */
+.search-match-banner {
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}
+
+.match-source-tag {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.18);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+/* Variants Bar */
+.matching-variants-bar {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.95rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.matching-variants-lbl {
+  font-size: 0.71875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.variant-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.variant-chip:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
 .gene-quick-search-bar {
   display: flex;
   align-items: center;

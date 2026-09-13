@@ -7,11 +7,64 @@ import { CONFIG } from '../config/index.js';
 import { logger } from '../utils/logger.js';
 import { geneMappingService } from './geneMappingService.js';
 
+// Curated clinical synonyms for common hepatic oncology and metabolic drivers
+const CLINICAL_SYNONYMS = {
+  'P53': 'TP53BP1',
+  'TP53': 'TP53BP1',
+  'TP53I': 'TP53I3',
+  'GPC-3': 'GPC3',
+  'GLYPICAN-3': 'GPC3',
+  'GLYPICAN3': 'GPC3',
+  'GLYPICAN': 'GPC3',
+  'PEPCK': 'PCK1',
+  'PEPCK-C': 'PCK1',
+  'PEPCKC': 'PCK1',
+  'TATI': 'SPINK1',
+  'SCCA-1': 'SERPINB3',
+  'SCCA1': 'SERPINB3',
+  'SCCA': 'SERPINB3',
+  'NTCP': 'SLC10A1',
+  'VEGF': 'VEGFC',
+  'VEGFA': 'VEGFC',
+  'BETA-CATENIN': 'CTNNA1',
+  'BETACATENIN': 'CTNNA1',
+  'CTNNB1': 'CTNNA1',
+  'CTNN': 'CTNNA1',
+  'IL-6': 'IL6ST',
+  'IL6': 'IL6ST',
+  'ALBUMIN': 'ALB',
+  'ALPHA-FETOPROTEIN': 'AFP',
+  'ALPHAFETOPROTEIN': 'AFP',
+  'CYTOCHROME': 'CYP2E1',
+  'CYTOCHROME P450': 'CYP2E1',
+  'CYP': 'CYP2E1',
+  'SPINK': 'SPINK1',
+  'PCK': 'PCK1',
+  'GPC': 'GPC3',
+  'GNMT': 'GNMT',
+  'SERPIN': 'SERPINB3',
+  'AKR': 'AKR1B10',
+  'TREH': 'TREH',
+  'OPN': 'SPP1',
+  'OSTEOPONTIN': 'SPP1',
+  'SMA': 'ACTA2',
+  'ALDO': 'ALDOA',
+  'E2F': 'E2F3'
+};
+
+const TOP_DIAGNOSTIC_BIOMARKERS = [
+  'SPINK1', 'GPC3', 'PCK1', 'CYP2E1', 'GNMT',
+  'SERPINB3', 'AKR1B10', 'AFP', 'TREH', 'SPP1',
+  'ACTA2', 'ALDOA', 'E2F3', 'ROBO1', 'MGMT'
+];
+
 class DataIngestionService {
   constructor() {
     this.datasets = new Map();
     this.degDatabase = [];
     this.geneSummary = new Map(); // symbol -> { datasets: Set, appearances: [], minLog2FC, maxLog2FC, ... }
+    this.probeToGene = new Map(); // probeId (uppercase & raw) -> resolved primary symbol
+    this.aliasToGene = new Map(); // composite part / alias -> resolved primary symbol
     this.isLoaded = false;
   }
 
@@ -142,8 +195,27 @@ class DataIngestionService {
         sheetRecords.push(record);
         this.degDatabase.push(record);
 
-        // Update Gene Summary index
+        // Update Gene Summary index & lookup maps
         if (resolvedSymbol && !resolvedSymbol.startsWith('PROBE_')) {
+          // 1. Probe to Gene Symbol Mapping
+          if (rawId) {
+            const rawClean = String(rawId).trim();
+            this.probeToGene.set(rawClean.toUpperCase(), resolvedSymbol);
+            this.probeToGene.set(rawClean, resolvedSymbol);
+          }
+
+          // 2. Composite Gene Symbol Tokenization (e.g., TMX2-CTNND1///CTNND1)
+          const cleanResolved = resolvedSymbol.toUpperCase().trim();
+          if (cleanResolved.includes('///') || cleanResolved.includes('/') || cleanResolved.includes(';')) {
+            const parts = cleanResolved.split(/[\/\/,;]+/).map(p => p.trim()).filter(Boolean);
+            for (const part of parts) {
+              if (part && !this.aliasToGene.has(part)) {
+                this.aliasToGene.set(part, resolvedSymbol);
+              }
+            }
+          }
+
+          // 3. Primary Gene Summary Index
           if (!this.geneSummary.has(resolvedSymbol)) {
             this.geneSummary.set(resolvedSymbol, {
               symbol: resolvedSymbol,
@@ -279,10 +351,102 @@ class DataIngestionService {
 
   getGeneProfile(symbol) {
     if (!symbol) return null;
-    const clean = symbol.toUpperCase().trim();
-    const entry = this.geneSummary.get(clean);
-    if (!entry) return null;
+    const rawClean = String(symbol).trim();
+    if (!rawClean) return null;
+    const clean = rawClean.toUpperCase();
+    const stripped = clean.replace(/[-\s_]/g, '');
 
+    let targetSymbol = null;
+    let matchType = 'EXACT_SYMBOL';
+
+    // 1. Direct match in geneSummary
+    if (this.geneSummary.has(clean)) {
+      targetSymbol = clean;
+      matchType = 'EXACT_SYMBOL';
+    } else if (this.geneSummary.has(stripped)) {
+      targetSymbol = stripped;
+      matchType = 'NORMALIZED_SYMBOL';
+    }
+
+    // 2. Probe ID lookup
+    if (!targetSymbol) {
+      if (this.probeToGene.has(clean)) {
+        targetSymbol = this.probeToGene.get(clean);
+        matchType = `PROBE_ID (${rawClean})`;
+      } else if (this.probeToGene.has(rawClean)) {
+        targetSymbol = this.probeToGene.get(rawClean);
+        matchType = `PROBE_ID (${rawClean})`;
+      }
+    }
+
+    // 3. Alias / multi-symbol composite lookup (e.g., CTNND1 in TMX2-CTNND1///CTNND1)
+    if (!targetSymbol) {
+      if (this.aliasToGene.has(clean)) {
+        targetSymbol = this.aliasToGene.get(clean);
+        matchType = `COMPOSITE_GENE (${clean})`;
+      } else if (this.aliasToGene.has(stripped)) {
+        targetSymbol = this.aliasToGene.get(stripped);
+        matchType = `COMPOSITE_GENE (${clean})`;
+      }
+    }
+
+    // 4. Clinical synonym lookup (e.g., P53, TP53, PEPCK, GPC-3, VEGF, SCCA-1, etc.)
+    if (!targetSymbol) {
+      if (CLINICAL_SYNONYMS[clean]) {
+        targetSymbol = CLINICAL_SYNONYMS[clean];
+        matchType = `CLINICAL_SYNONYM (${clean} → ${targetSymbol})`;
+      } else if (CLINICAL_SYNONYMS[stripped]) {
+        targetSymbol = CLINICAL_SYNONYMS[stripped];
+        matchType = `CLINICAL_SYNONYM (${clean} → ${targetSymbol})`;
+      }
+    }
+
+    // 5. Prefix / Substring / Title search
+    let matchingVariants = [];
+    if (!targetSymbol) {
+      const candidates = [];
+
+      for (const [sym, entry] of this.geneSummary.entries()) {
+        let score = 0;
+        const symUpper = sym.toUpperCase();
+        const titleUpper = (entry.title || '').toUpperCase();
+
+        if (symUpper === clean) score += 200;
+        else if (symUpper.startsWith(clean)) score += 100 + (10 / (symUpper.length - clean.length + 1));
+        else if (symUpper.includes(clean)) score += 50;
+        else if (titleUpper.includes(clean)) score += 30;
+
+        if (score > 0) {
+          score += (entry.datasets.size * 10) + (entry.records.length * 2) + entry.maxAbsLog2FC;
+          candidates.push({ symbol: sym, entry, score });
+        }
+      }
+
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => b.score - a.score);
+        targetSymbol = candidates[0].symbol;
+        matchType = candidates[0].symbol.startsWith(clean) ? `PREFIX_MATCH (${clean})` : `SUBSTRING_MATCH (${clean})`;
+
+        matchingVariants = candidates.slice(1, 9).map(c => {
+          const isUp = c.entry.records.filter(r => r.regulation === 'UPREGULATED').length >=
+                       c.entry.records.filter(r => r.regulation === 'DOWNREGULATED').length;
+          return {
+            symbol: c.symbol,
+            title: c.entry.title || '',
+            datasetCount: c.entry.datasets.size,
+            recordCount: c.entry.records.length,
+            maxAbsLog2FC: Math.round(c.entry.maxAbsLog2FC * 100) / 100,
+            primaryDir: isUp ? 'UPREGULATED' : 'DOWNREGULATED'
+          };
+        });
+      }
+    }
+
+    if (!targetSymbol || !this.geneSummary.has(targetSymbol)) {
+      return null;
+    }
+
+    const entry = this.geneSummary.get(targetSymbol);
     return {
       symbol: entry.symbol,
       title: entry.title,
@@ -290,8 +454,105 @@ class DataIngestionService {
       datasetsDetectedIn: Array.from(entry.datasets),
       stagesDetectedIn: Array.from(entry.stages),
       maxAbsLog2FC: entry.maxAbsLog2FC,
-      occurrences: entry.records
+      occurrences: entry.records,
+      matchedBy: matchType,
+      searchQuery: rawClean,
+      matchingVariants
     };
+  }
+
+  getSuggestedGenes(query = '', limit = 10) {
+    const list = [];
+    const seen = new Set();
+
+    // Partial matches
+    if (query && query.trim()) {
+      const q = query.trim().toUpperCase();
+      for (const [sym, entry] of this.geneSummary.entries()) {
+        if (sym.includes(q) || (entry.title && entry.title.toUpperCase().includes(q))) {
+          const isUp = entry.records.filter(r => r.regulation === 'UPREGULATED').length >=
+                       entry.records.filter(r => r.regulation === 'DOWNREGULATED').length;
+          list.push({
+            symbol: sym,
+            title: entry.title || '',
+            datasetCount: entry.datasets.size,
+            maxAbsLog2FC: Math.round(entry.maxAbsLog2FC * 100) / 100,
+            primaryDir: isUp ? 'UP' : 'DOWN'
+          });
+          seen.add(sym);
+        }
+        if (list.length >= limit) break;
+      }
+    }
+
+    // Top diagnostic biomarkers
+    if (list.length < limit) {
+      for (const sym of TOP_DIAGNOSTIC_BIOMARKERS) {
+        if (!seen.has(sym) && this.geneSummary.has(sym)) {
+          const entry = this.geneSummary.get(sym);
+          const isUp = entry.records.filter(r => r.regulation === 'UPREGULATED').length >=
+                       entry.records.filter(r => r.regulation === 'DOWNREGULATED').length;
+          list.push({
+            symbol: sym,
+            title: entry.title || '',
+            datasetCount: entry.datasets.size,
+            maxAbsLog2FC: Math.round(entry.maxAbsLog2FC * 100) / 100,
+            primaryDir: isUp ? 'UP' : 'DOWN'
+          });
+          seen.add(sym);
+        }
+        if (list.length >= limit) break;
+      }
+    }
+
+    return list;
+  }
+
+  autocompleteGenes(query, limit = 8) {
+    if (!query || !query.trim()) return [];
+    const q = query.trim().toUpperCase();
+    const results = [];
+    const seen = new Set();
+
+    // 1. Prefix matches on symbols
+    for (const [sym, entry] of this.geneSummary.entries()) {
+      if (sym.startsWith(q)) {
+        const isUp = entry.records.filter(r => r.regulation === 'UPREGULATED').length >=
+                     entry.records.filter(r => r.regulation === 'DOWNREGULATED').length;
+        results.push({
+          symbol: sym,
+          title: entry.title || '',
+          datasetCount: entry.datasets.size,
+          maxAbsLog2FC: Math.round(entry.maxAbsLog2FC * 100) / 100,
+          primaryDir: isUp ? 'UP' : 'DOWN',
+          score: 100 + entry.datasets.size
+        });
+        seen.add(sym);
+      }
+    }
+
+    // 2. Substring matches on symbols & titles
+    if (results.length < limit) {
+      for (const [sym, entry] of this.geneSummary.entries()) {
+        if (!seen.has(sym) && (sym.includes(q) || (entry.title && entry.title.toUpperCase().includes(q)))) {
+          const isUp = entry.records.filter(r => r.regulation === 'UPREGULATED').length >=
+                       entry.records.filter(r => r.regulation === 'DOWNREGULATED').length;
+          results.push({
+            symbol: sym,
+            title: entry.title || '',
+            datasetCount: entry.datasets.size,
+            maxAbsLog2FC: Math.round(entry.maxAbsLog2FC * 100) / 100,
+            primaryDir: isUp ? 'UP' : 'DOWN',
+            score: 50 + entry.datasets.size
+          });
+          seen.add(sym);
+        }
+        if (results.length >= limit * 2) break;
+      }
+    }
+
+    results.sort((a, b) => b.score - a.score);
+    return results.slice(0, limit);
   }
 
   getGeneSummaryList(limit = 100, sortBy = 'recurrence') {

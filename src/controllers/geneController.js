@@ -25,9 +25,27 @@ export const getGeneProfile = (req, res) => {
     const { symbol } = req.params;
     const profile = dataIngestionService.getGeneProfile(symbol);
     if (!profile) {
-      return res.status(404).json({ success: false, error: `Gene '${symbol}' not found in biopsy DEG database.` });
+      const suggestions = dataIngestionService.getSuggestedGenes(symbol, 10);
+      return res.status(200).json({
+        success: false,
+        notFound: true,
+        query: symbol,
+        error: `No differential expression records found for '${symbol}' in the 7 human liver biopsy datasets.`,
+        suggestions
+      });
     }
     res.json({ success: true, gene: profile });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const autocompleteGenes = (req, res) => {
+  try {
+    const q = req.query.q || req.query.query || '';
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : 8;
+    const suggestions = dataIngestionService.autocompleteGenes(q, limit);
+    res.json({ success: true, suggestions });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
